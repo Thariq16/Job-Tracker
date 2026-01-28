@@ -8,14 +8,15 @@ final jobsStreamProvider = StreamProvider<List<JobModel>>((ref) {
   return repository.getJobs();
 });
 
-final jobsControllerProvider = StateNotifierProvider<JobsController, AsyncValue<void>>((ref) {
-  return JobsController(ref.read(jobRepositoryProvider));
+final jobsControllerProvider = NotifierProvider<JobsController, AsyncValue<void>>(() {
+  return JobsController();
 });
 
-class JobsController extends StateNotifier<AsyncValue<void>> {
-  final JobRepository _repository;
+class JobsController extends Notifier<AsyncValue<void>> {
+  @override
+  AsyncValue<void> build() => const AsyncValue.data(null);
 
-  JobsController(this._repository) : super(const AsyncValue.data(null));
+  JobRepository get _repository => ref.read(jobRepositoryProvider);
 
   Future<void> addJob({
     required String company, 
@@ -42,7 +43,7 @@ class JobsController extends StateNotifier<AsyncValue<void>> {
       }
 
       final job = JobModel(
-        id: '', // Firestore will assign
+        id: '',
         company: company,
         role: role,
         status: 'applied',
@@ -99,7 +100,6 @@ class JobsController extends StateNotifier<AsyncValue<void>> {
     state = const AsyncValue.loading();
     try {
       String? cvUrl = existingCvUrl;
-      // Upload new CV if provided
       if (cvBytes != null && cvFileName != null) {
         cvUrl = await _repository.uploadCV(cvFileName, cvBytes);
       }
@@ -135,7 +135,7 @@ class JobsController extends StateNotifier<AsyncValue<void>> {
      try {
       await _repository.deleteJob(id);
     } catch (e) {
-      // Handle error potentially
+      // Handle error
     }
   }
 }

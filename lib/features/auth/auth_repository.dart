@@ -1,13 +1,10 @@
-import 'package:flutter/foundation.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:google_sign_in/google_sign_in.dart';
 
 final authRepositoryProvider = Provider<AuthRepository>((ref) {
-  return AuthRepository(FirebaseAuth.instance, GoogleSignIn(
-    clientId: kIsWeb ? '43725413571-cej4mftvvqcu6t33g2urdia3ghmfadul.apps.googleusercontent.com' : null,
-  ));
+  return AuthRepository(FirebaseAuth.instance);
 });
 
 final authStateChangesProvider = StreamProvider<User?>((ref) {
@@ -16,9 +13,9 @@ final authStateChangesProvider = StreamProvider<User?>((ref) {
 
 class AuthRepository {
   final FirebaseAuth _firebaseAuth;
-  final GoogleSignIn _googleSignIn;
+  final GoogleSignIn _googleSignIn = GoogleSignIn();
 
-  AuthRepository(this._firebaseAuth, this._googleSignIn);
+  AuthRepository(this._firebaseAuth);
 
   Stream<User?> get authStateChanges => _firebaseAuth.authStateChanges();
 
@@ -26,35 +23,37 @@ class AuthRepository {
 
   Future<User?> signInWithGoogle() async {
     try {
-      final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
-      if (googleUser == null) return null; // User canceled
+      if (kIsWeb) {
+        // Use Firebase Auth popup for web
+        final GoogleAuthProvider googleProvider = GoogleAuthProvider();
+        googleProvider.addScope('email');
+        googleProvider.addScope('profile');
+        
+        final userCredential = await _firebaseAuth.signInWithPopup(googleProvider);
+        return userCredential.user;
+      } else {
+        // Use GoogleSignIn package for mobile
+        final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
+        if (googleUser == null) return null;
 
-      final GoogleSignInAuthentication googleAuth = await googleUser.authentication;
-      final AuthCredential credential = GoogleAuthProvider.credential(
-        accessToken: googleAuth.accessToken,
-        idToken: googleAuth.idToken,
-      );
+        final GoogleSignInAuthentication googleAuth = await googleUser.authentication;
+        final credential = GoogleAuthProvider.credential(
+          accessToken: googleAuth.accessToken,
+          idToken: googleAuth.idToken,
+        );
 
-      final UserCredential userCredential = await _firebaseAuth.signInWithCredential(credential);
-      final user = userCredential.user;
-      
-      if (user != null) {
-        // Sync Profile
-        await FirebaseFirestore.instance.collection('users').doc(user.uid).set({
-          'fullName': user.displayName,
-          'photoUrl': user.photoURL,
-        }, SetOptions(merge: true));
+        final userCredential = await _firebaseAuth.signInWithCredential(credential);
+        return userCredential.user;
       }
-
-      return user;
     } catch (e) {
-      print('Sign In Error: $e');
       rethrow;
     }
   }
 
   Future<void> signOut() async {
-    await _googleSignIn.signOut();
+    if (!kIsWeb) {
+      await _googleSignIn.signOut();
+    }
     await _firebaseAuth.signOut();
   }
 }

@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:flutter_animate/flutter_animate.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'profile_repository.dart';
 import '../auth/auth_repository.dart';
@@ -12,7 +11,7 @@ const List<Map<String, String>> countries = [
   {'name': 'Saudi Arabia', 'code': 'SA', 'phone': '+966'},
   {'name': 'United States', 'code': 'US', 'phone': '+1'},
   {'name': 'United Kingdom', 'code': 'GB', 'phone': '+44'},
-  {'name': 'Canada', 'code': 'CA', 'phone': '+1'},
+  {'name': 'Canada', 'code': 'CA', 'phone': '+1 CA'},
   {'name': 'Germany', 'code': 'DE', 'phone': '+49'},
   {'name': 'France', 'code': 'FR', 'phone': '+33'},
   {'name': 'India', 'code': 'IN', 'phone': '+91'},
@@ -56,14 +55,65 @@ class ProfileScreen extends ConsumerStatefulWidget {
 
 class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   bool _isUploading = false;
-  bool _isSaved = false;
+  bool _isSaving = false;
+  bool _hasChanges = false;
   final _targetRoleController = TextEditingController();
 
-  void _showSaveIndicator() {
-    setState(() => _isSaved = true);
-    Future.delayed(const Duration(seconds: 2), () {
-      if (mounted) setState(() => _isSaved = false);
-    });
+  // Form fields to track changes
+  String? _fullName;
+  String? _jobTitle;
+  String? _phoneCode;
+  String? _phoneNumber;
+  String? _currentCountry;
+  String? _targetCountry;
+  bool? _willingToRelocate;
+  List<String>? _targetRoles;
+  bool _initialized = false;
+
+  void _markChanged() {
+    if (!_hasChanges) {
+      setState(() => _hasChanges = true);
+    }
+  }
+
+  Future<void> _saveChanges() async {
+    setState(() => _isSaving = true);
+    try {
+      await ref.read(profileRepositoryProvider).updateProfile(
+        fullName: _fullName,
+        jobTitle: _jobTitle,
+        phoneCode: _phoneCode,
+        phoneNumber: _phoneNumber,
+        currentCountry: _currentCountry,
+        targetCountry: _targetCountry,
+        willingToRelocate: _willingToRelocate,
+        targetRoles: _targetRoles,
+      );
+      if (mounted) {
+        setState(() => _hasChanges = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Row(
+              children: [
+                Icon(Icons.check_circle, color: Colors.white, size: 18),
+                SizedBox(width: 8),
+                Text('Profile saved successfully!'),
+              ],
+            ),
+            backgroundColor: Colors.green,
+            duration: Duration(seconds: 2),
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to save: $e'), backgroundColor: Colors.red),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isSaving = false);
+    }
   }
 
   Future<void> _uploadCV() async {
@@ -72,7 +122,16 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       await ref.read(profileRepositoryProvider).uploadCV();
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('CV uploaded successfully!'), backgroundColor: Colors.green),
+          const SnackBar(
+            content: Row(
+              children: [
+                Icon(Icons.check_circle, color: Colors.white, size: 18),
+                SizedBox(width: 8),
+                Text('CV uploaded successfully!'),
+              ],
+            ),
+            backgroundColor: Colors.green,
+          ),
         );
       }
     } catch (e) {
@@ -95,327 +154,401 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   @override
   Widget build(BuildContext context) {
     final profileAsync = ref.watch(profileStreamProvider);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
       appBar: AppBar(
         title: Text("My Profile", style: GoogleFonts.outfit(fontWeight: FontWeight.bold)),
         actions: [
-          if (_isSaved)
+          if (_hasChanges)
             Padding(
-              padding: const EdgeInsets.only(right: 16),
-              child: Row(
-                children: [
-                  const Icon(Icons.check_circle, color: Colors.green, size: 18),
-                  const SizedBox(width: 4),
-                  Text("Saved", style: TextStyle(color: Colors.green[700], fontSize: 12)),
-                ],
+              padding: const EdgeInsets.only(right: 8),
+              child: TextButton.icon(
+                onPressed: _isSaving ? null : _saveChanges,
+                icon: _isSaving 
+                    ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                    : const Icon(Icons.save, size: 18),
+                label: Text(_isSaving ? 'Saving...' : 'Save'),
+                style: TextButton.styleFrom(
+                  foregroundColor: Colors.white,
+                  backgroundColor: Colors.green,
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                ),
               ),
-            ).animate().fadeIn().fadeOut(delay: 1500.ms),
+            ),
         ],
       ),
       body: profileAsync.when(
-        data: (profile) => SingleChildScrollView(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
+        data: (profile) {
+          // Initialize local state from profile on first load
+          if (!_initialized) {
+            _fullName = profile.fullName;
+            _jobTitle = profile.jobTitle;
+            _phoneCode = profile.phoneCode;
+            _phoneNumber = profile.phoneNumber;
+            _currentCountry = profile.currentCountry;
+            _targetCountry = profile.targetCountry;
+            _willingToRelocate = profile.willingToRelocate;
+            _targetRoles = profile.targetRoles != null ? List.from(profile.targetRoles!) : [];
+            _initialized = true;
+          }
+
+          return Stack(
             children: [
-              // Profile Photo
-              if (profile.photoUrl != null)
-                Center(
-                  child: Container(
-                    padding: const EdgeInsets.all(4),
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      gradient: LinearGradient(
-                        colors: [Colors.indigo.shade400, Colors.purple.shade400],
-                      ),
-                    ),
-                    child: CircleAvatar(
-                      radius: 50,
-                      backgroundImage: NetworkImage(profile.photoUrl!),
-                    ),
-                  ),
-                ).animate().scale(),
-              
-              const SizedBox(height: 32),
-              
-              // Section: Personal Info
-              _buildSectionHeader('Personal Information', Icons.person_outline),
-              const SizedBox(height: 16),
-              
-              _buildCard([
-                TextFormField(
-                  initialValue: profile.fullName,
-                  decoration: const InputDecoration(
-                    labelText: 'Full Name',
-                    prefixIcon: Icon(Icons.badge_outlined),
-                  ),
-                  onChanged: (val) {
-                    ref.read(profileRepositoryProvider).updateProfile(fullName: val);
-                    _showSaveIndicator();
-                  },
-                ),
-                const SizedBox(height: 16),
-                TextFormField(
-                  initialValue: profile.jobTitle,
-                  decoration: const InputDecoration(
-                    labelText: 'Current Job Title',
-                    prefixIcon: Icon(Icons.work_outline),
-                  ),
-                  onChanged: (val) {
-                    ref.read(profileRepositoryProvider).updateProfile(jobTitle: val);
-                    _showSaveIndicator();
-                  },
-                ),
-              ]),
-              
-              const SizedBox(height: 24),
-              
-              // Section: Contact
-              _buildSectionHeader('Contact', Icons.phone_outlined),
-              const SizedBox(height: 16),
-              
-              _buildCard([
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+              SingleChildScrollView(
+                padding: const EdgeInsets.all(24),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    // Country Code Dropdown
-                    SizedBox(
-                      width: 120,
-                      child: DropdownButtonFormField<String>(
-                        value: profile.phoneCode,
+                    // Profile Photo
+                    if (profile.photoUrl != null)
+                      Center(
+                        child: Container(
+                          padding: const EdgeInsets.all(4),
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            gradient: LinearGradient(
+                              colors: [Colors.indigo.shade400, Colors.purple.shade400],
+                            ),
+                          ),
+                          child: CircleAvatar(
+                            radius: 50,
+                            backgroundImage: NetworkImage(profile.photoUrl!),
+                          ),
+                        ),
+                      ),
+                    
+                    const SizedBox(height: 32),
+                    
+                    // Section: Personal Info
+                    _buildSectionHeader('Personal Information', Icons.person_outline),
+                    const SizedBox(height: 16),
+                    
+                    _buildCard([
+                      TextFormField(
+                        initialValue: _fullName,
                         decoration: const InputDecoration(
-                          labelText: 'Code',
-                          contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 16),
+                          labelText: 'Full Name',
+                          prefixIcon: Icon(Icons.badge_outlined),
+                        ),
+                        onChanged: (val) {
+                          _fullName = val;
+                          _markChanged();
+                        },
+                      ),
+                      const SizedBox(height: 16),
+                      TextFormField(
+                        initialValue: _jobTitle,
+                        decoration: const InputDecoration(
+                          labelText: 'Current Job Title',
+                          prefixIcon: Icon(Icons.work_outline),
+                        ),
+                        onChanged: (val) {
+                          _jobTitle = val;
+                          _markChanged();
+                        },
+                      ),
+                    ]),
+                    
+                    const SizedBox(height: 24),
+                    
+                    // Section: Contact
+                    _buildSectionHeader('Contact', Icons.phone_outlined),
+                    const SizedBox(height: 16),
+                    
+                    _buildCard([
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // Country Code Dropdown
+                          SizedBox(
+                            width: 130,
+                            child: DropdownButtonFormField<String>(
+                              value: countries.any((c) => c['code'] == _phoneCode) 
+                                  ? _phoneCode 
+                                  : null,
+                              decoration: const InputDecoration(
+                                labelText: 'Code',
+                                contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 16),
+                              ),
+                              isExpanded: true,
+                              items: countries.map((c) => DropdownMenuItem(
+                                value: c['code'],
+                                child: Text('${c['phone']} (${c['code']})', style: const TextStyle(fontSize: 12)),
+                              )).toList(),
+                              onChanged: (val) {
+                                _phoneCode = val;
+                                _markChanged();
+                              },
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          // Phone Number
+                          Expanded(
+                            child: TextFormField(
+                              initialValue: _phoneNumber,
+                              keyboardType: TextInputType.phone,
+                              decoration: const InputDecoration(
+                                labelText: 'Phone Number',
+                              ),
+                              onChanged: (val) {
+                                _phoneNumber = val;
+                                _markChanged();
+                              },
+                            ),
+                          ),
+                        ],
+                      ),
+                    ]),
+                    
+                    const SizedBox(height: 24),
+                    
+                    // Section: Location
+                    _buildSectionHeader('Location', Icons.location_on_outlined),
+                    const SizedBox(height: 16),
+                    
+                    _buildCard([
+                      DropdownButtonFormField<String>(
+                        value: _currentCountry,
+                        decoration: const InputDecoration(
+                          labelText: 'Current Country',
+                          prefixIcon: Icon(Icons.home_outlined),
                         ),
                         isExpanded: true,
                         items: countries.map((c) => DropdownMenuItem(
-                          value: c['phone'],
-                          child: Text(c['phone']!, style: const TextStyle(fontSize: 14)),
+                          value: c['name'],
+                          child: Text(c['name']!),
                         )).toList(),
                         onChanged: (val) {
-                          ref.read(profileRepositoryProvider).updateProfile(phoneCode: val);
-                          _showSaveIndicator();
+                          setState(() => _currentCountry = val);
+                          _markChanged();
                         },
                       ),
-                    ),
-                    const SizedBox(width: 12),
-                    // Phone Number
-                    Expanded(
-                      child: TextFormField(
-                        initialValue: profile.phoneNumber,
-                        keyboardType: TextInputType.phone,
-                        decoration: const InputDecoration(
-                          labelText: 'Phone Number',
-                        ),
+                      const SizedBox(height: 16),
+                      SwitchListTile(
+                        title: const Text("Open to Relocation"),
+                        subtitle: Text("Show interest in opportunities abroad", style: TextStyle(fontSize: 12, color: Colors.grey[600])),
+                        value: _willingToRelocate ?? false,
                         onChanged: (val) {
-                          ref.read(profileRepositoryProvider).updateProfile(phoneNumber: val);
-                          _showSaveIndicator();
+                          setState(() => _willingToRelocate = val);
+                          _markChanged();
                         },
+                        contentPadding: EdgeInsets.zero,
                       ),
-                    ),
-                  ],
-                ),
-              ]),
-              
-              const SizedBox(height: 24),
-              
-              // Section: Location
-              _buildSectionHeader('Location', Icons.location_on_outlined),
-              const SizedBox(height: 16),
-              
-              _buildCard([
-                DropdownButtonFormField<String>(
-                  value: profile.currentCountry,
-                  decoration: const InputDecoration(
-                    labelText: 'Current Country',
-                    prefixIcon: Icon(Icons.home_outlined),
-                  ),
-                  isExpanded: true,
-                  items: countries.map((c) => DropdownMenuItem(
-                    value: c['name'],
-                    child: Text(c['name']!),
-                  )).toList(),
-                  onChanged: (val) {
-                    ref.read(profileRepositoryProvider).updateProfile(currentCountry: val);
-                    _showSaveIndicator();
-                  },
-                ),
-                const SizedBox(height: 16),
-                SwitchListTile(
-                  title: const Text("Open to Relocation"),
-                  subtitle: Text("Show interest in opportunities abroad", style: TextStyle(fontSize: 12, color: Colors.grey[600])),
-                  value: profile.willingToRelocate ?? false,
-                  onChanged: (val) {
-                    ref.read(profileRepositoryProvider).updateProfile(willingToRelocate: val);
-                    _showSaveIndicator();
-                  },
-                  contentPadding: EdgeInsets.zero,
-                ),
-                if (profile.willingToRelocate == true) ...[
-                  const SizedBox(height: 16),
-                  DropdownButtonFormField<String>(
-                    value: profile.targetCountry,
-                    decoration: const InputDecoration(
-                      labelText: 'Target Country',
-                      prefixIcon: Icon(Icons.flight_takeoff),
-                    ),
-                    isExpanded: true,
-                    items: countries.map((c) => DropdownMenuItem(
-                      value: c['name'],
-                      child: Text(c['name']!),
-                    )).toList(),
-                    onChanged: (val) {
-                      ref.read(profileRepositoryProvider).updateProfile(targetCountry: val);
-                      _showSaveIndicator();
-                    },
-                  ),
-                ],
-              ]),
-              
-              const SizedBox(height: 24),
-              
-              // Section: Target Roles
-              _buildSectionHeader('Target Roles', Icons.flag_outlined),
-              const SizedBox(height: 16),
-              
-              _buildCard([
-                Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
-                  children: [
-                    ...(profile.targetRoles ?? []).map((role) => Chip(
-                      label: Text(role),
-                      deleteIcon: const Icon(Icons.close, size: 16),
-                      onDeleted: () {
-                        final updated = List<String>.from(profile.targetRoles ?? []);
-                        updated.remove(role);
-                        ref.read(profileRepositoryProvider).updateProfile(targetRoles: updated);
-                        _showSaveIndicator();
-                      },
-                      backgroundColor: Colors.indigo.shade50,
-                      labelStyle: TextStyle(color: Colors.indigo.shade700),
-                    )),
-                  ],
-                ),
-                const SizedBox(height: 12),
-                Row(
-                  children: [
-                    Expanded(
-                      child: TextField(
-                        controller: _targetRoleController,
-                        decoration: const InputDecoration(
-                          hintText: 'e.g. Product Manager, UX Designer',
-                          isDense: true,
+                      if (_willingToRelocate == true) ...[
+                        const SizedBox(height: 16),
+                        DropdownButtonFormField<String>(
+                          value: _targetCountry,
+                          decoration: const InputDecoration(
+                            labelText: 'Target Country',
+                            prefixIcon: Icon(Icons.flight_takeoff),
+                          ),
+                          isExpanded: true,
+                          items: countries.map((c) => DropdownMenuItem(
+                            value: c['name'],
+                            child: Text(c['name']!),
+                          )).toList(),
+                          onChanged: (val) {
+                            setState(() => _targetCountry = val);
+                            _markChanged();
+                          },
                         ),
-                        onSubmitted: (val) => _addTargetRole(profile.targetRoles),
+                      ],
+                    ]),
+                    
+                    const SizedBox(height: 24),
+                    
+                    // Section: Target Roles
+                    _buildSectionHeader('Target Roles', Icons.flag_outlined),
+                    const SizedBox(height: 16),
+                    
+                    _buildCard([
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 8,
+                        children: [
+                          ...(_targetRoles ?? []).map((role) => Chip(
+                            label: Text(role),
+                            deleteIcon: const Icon(Icons.close, size: 16),
+                            onDeleted: () {
+                              setState(() {
+                                _targetRoles?.remove(role);
+                              });
+                              _markChanged();
+                            },
+                            backgroundColor: Colors.indigo.shade50,
+                            labelStyle: TextStyle(color: Colors.indigo.shade700),
+                          )),
+                        ],
                       ),
-                    ),
-                    const SizedBox(width: 8),
-                    IconButton.filled(
-                      onPressed: () => _addTargetRole(profile.targetRoles),
-                      icon: const Icon(Icons.add),
-                    ),
-                  ],
-                ),
-              ]),
-              
-              const SizedBox(height: 24),
-              
-              // Section: CV
-              _buildSectionHeader('My CV', Icons.description_outlined),
-              const SizedBox(height: 16),
-              
-              _buildCard([
-                if (profile.cvUrl != null) 
-                  Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(12),
-                      color: Colors.green.shade50,
-                    ),
-                    child: Row(
-                      children: [
-                        Icon(Icons.picture_as_pdf, color: Colors.green.shade700),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
+                      const SizedBox(height: 12),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: TextField(
+                              controller: _targetRoleController,
+                              decoration: const InputDecoration(
+                                hintText: 'e.g. Product Manager, UX Designer',
+                                isDense: true,
+                              ),
+                              onSubmitted: (val) => _addTargetRole(),
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          IconButton.filled(
+                            onPressed: _addTargetRole,
+                            icon: const Icon(Icons.add),
+                          ),
+                        ],
+                      ),
+                    ]),
+                    
+                    const SizedBox(height: 24),
+                    
+                    // Section: CV
+                    _buildSectionHeader('My CV', Icons.description_outlined),
+                    const SizedBox(height: 16),
+                    
+                    _buildCard([
+                      if (profile.cvUrl != null) 
+                        Container(
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(12),
+                            color: Colors.green.shade50,
+                            border: Border.all(color: Colors.green.shade200),
+                          ),
+                          child: Row(
                             children: [
-                              Text(profile.cvName ?? 'Uploaded CV', style: const TextStyle(fontWeight: FontWeight.w500)),
-                              Text('Tap to view', style: TextStyle(fontSize: 12, color: Colors.grey[600])),
+                              Container(
+                                padding: const EdgeInsets.all(8),
+                                decoration: BoxDecoration(
+                                  color: Colors.green.shade100,
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: Icon(Icons.picture_as_pdf, color: Colors.green.shade700, size: 24),
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      profile.cvName ?? 'Uploaded CV',
+                                      style: TextStyle(fontWeight: FontWeight.w600, color: Colors.green.shade800),
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                    const SizedBox(height: 2),
+                                    Text(
+                                      '✓ Uploaded successfully',
+                                      style: TextStyle(fontSize: 12, color: Colors.green.shade600),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              TextButton.icon(
+                                onPressed: () => launchUrl(Uri.parse(profile.cvUrl!)),
+                                icon: const Icon(Icons.open_in_new, size: 16),
+                                label: const Text('View'),
+                              ),
+                            ],
+                          ),
+                        )
+                      else
+                        Container(
+                          padding: const EdgeInsets.all(20),
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: Colors.grey.shade300, style: BorderStyle.solid),
+                            color: isDark ? Colors.grey.shade800 : Colors.grey.shade50,
+                          ),
+                          child: Column(
+                            children: [
+                              Icon(Icons.upload_file, color: Colors.grey[400], size: 40),
+                              const SizedBox(height: 8),
+                              Text('No CV uploaded yet', style: TextStyle(color: Colors.grey[500], fontWeight: FontWeight.w500)),
+                              const SizedBox(height: 4),
+                              Text('Upload your CV to share with applications', style: TextStyle(color: Colors.grey[400], fontSize: 12)),
                             ],
                           ),
                         ),
-                        IconButton(
-                          icon: const Icon(Icons.open_in_new),
-                          onPressed: () => launchUrl(Uri.parse(profile.cvUrl!)),
+                      const SizedBox(height: 12),
+                      SizedBox(
+                        width: double.infinity,
+                        child: ElevatedButton.icon(
+                          onPressed: _isUploading ? null : _uploadCV,
+                          icon: _isUploading 
+                            ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                            : const Icon(Icons.cloud_upload_outlined),
+                          label: Text(_isUploading 
+                            ? 'Uploading...' 
+                            : profile.cvUrl != null ? 'Replace CV' : 'Upload CV (PDF, DOC)'),
+                          style: ElevatedButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(vertical: 14),
+                            backgroundColor: profile.cvUrl != null ? Colors.grey.shade600 : Colors.indigo,
+                            foregroundColor: Colors.white,
+                          ),
                         ),
-                      ],
+                      ),
+                    ]),
+                    
+                    const SizedBox(height: 40),
+                    
+                    // Sign Out
+                    Center(
+                      child: TextButton.icon(
+                        onPressed: () => ref.read(authRepositoryProvider).signOut(),
+                        icon: const Icon(Icons.logout, color: Colors.red),
+                        label: const Text("Sign Out", style: TextStyle(color: Colors.red)),
+                      ),
                     ),
-                  )
-                else
-                  Container(
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: Colors.grey.shade300, style: BorderStyle.solid),
-                    ),
-                    child: Row(
-                      children: [
-                        Icon(Icons.upload_file, color: Colors.grey[400]),
-                        const SizedBox(width: 12),
-                        Text('No CV uploaded yet', style: TextStyle(color: Colors.grey[500])),
-                      ],
-                    ),
-                  ),
-                const SizedBox(height: 12),
-                SizedBox(
-                  width: double.infinity,
-                  child: OutlinedButton.icon(
-                    onPressed: _isUploading ? null : _uploadCV,
-                    icon: _isUploading 
-                      ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2))
-                      : const Icon(Icons.cloud_upload_outlined),
-                    label: Text(_isUploading 
-                      ? 'Uploading...' 
-                      : profile.cvUrl != null ? 'Replace CV' : 'Upload CV'),
-                    style: OutlinedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(vertical: 14),
-                    ),
-                  ),
-                ),
-              ]),
-              
-              const SizedBox(height: 40),
-              
-              // Sign Out
-              Center(
-                child: TextButton.icon(
-                  onPressed: () => ref.read(authRepositoryProvider).signOut(),
-                  icon: const Icon(Icons.logout, color: Colors.red),
-                  label: const Text("Sign Out", style: TextStyle(color: Colors.red)),
+                    const SizedBox(height: 100), // Space for floating button
+                  ],
                 ),
               ),
-              const SizedBox(height: 24),
+              
+              // Floating Save Button
+              if (_hasChanges)
+                Positioned(
+                  bottom: 24,
+                  left: 24,
+                  right: 24,
+                  child: SafeArea(
+                    child: ElevatedButton.icon(
+                      onPressed: _isSaving ? null : _saveChanges,
+                      icon: _isSaving 
+                          ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                          : const Icon(Icons.save),
+                      label: Text(_isSaving ? 'Saving Changes...' : 'Save Changes', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.green,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        elevation: 4,
+                      ),
+                    ),
+                  ),
+                ),
             ],
-          ),
-        ),
+          );
+        },
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, st) => Center(child: Text('Error: $e')),
       ),
     );
   }
 
-  void _addTargetRole(List<String>? currentRoles) {
+  void _addTargetRole() {
     final role = _targetRoleController.text.trim();
     if (role.isEmpty) return;
     
-    final updated = List<String>.from(currentRoles ?? []);
-    if (!updated.contains(role)) {
-      updated.add(role);
-      ref.read(profileRepositoryProvider).updateProfile(targetRoles: updated);
-      _showSaveIndicator();
+    _targetRoles ??= [];
+    if (!_targetRoles!.contains(role)) {
+      setState(() {
+        _targetRoles!.add(role);
+      });
+      _markChanged();
     }
     _targetRoleController.clear();
   }

@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 class JobCard extends StatelessWidget {
   final String company;
@@ -91,8 +90,8 @@ class JobCard extends StatelessWidget {
                     decoration: BoxDecoration(
                       gradient: LinearGradient(
                         colors: [
-                          statusColor.withOpacity(0.2),
-                          statusColor.withOpacity(0.1),
+                          statusColor.withValues(alpha: 0.2),
+                          statusColor.withValues(alpha: 0.1),
                         ],
                         begin: Alignment.topLeft,
                         end: Alignment.bottomRight,
@@ -210,9 +209,9 @@ class JobCard extends StatelessWidget {
                     child: Container(
                       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                       decoration: BoxDecoration(
-                        color: statusColor.withOpacity(isDark ? 0.2 : 0.1),
+                        color: statusColor.withValues(alpha: isDark ? 0.2 : 0.1),
                         borderRadius: BorderRadius.circular(8),
-                        border: Border.all(color: statusColor.withOpacity(0.3)),
+                        border: Border.all(color: statusColor.withValues(alpha: 0.3)),
                       ),
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
@@ -253,11 +252,11 @@ class JobCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
       decoration: BoxDecoration(
-        color: color?.withOpacity(isDark ? 0.2 : 0.1) ?? 
-               (isDark ? Colors.white.withOpacity(0.08) : Colors.grey[100]),
+        color: color?.withValues(alpha: isDark ? 0.2 : 0.1) ?? 
+               (isDark ? Colors.white.withValues(alpha: 0.08) : Colors.grey[100]),
         borderRadius: BorderRadius.circular(6),
         border: color != null 
-            ? Border.all(color: color.withOpacity(0.3))
+            ? Border.all(color: color.withValues(alpha: 0.3))
             : null,
       ),
       child: Text(

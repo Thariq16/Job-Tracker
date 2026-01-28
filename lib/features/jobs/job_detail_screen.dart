@@ -6,7 +6,6 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:intl/intl.dart';
 import 'jobs_provider.dart';
 import 'add_job_modal.dart';
-import 'package:go_router/go_router.dart';
 
 class JobDetailScreen extends ConsumerWidget {
   final String jobId;
@@ -43,7 +42,7 @@ class JobDetailScreen extends ConsumerWidget {
               );
             },
             loading: () => const SizedBox(),
-            error: (_, __) => const SizedBox(),
+            error: (_, _) => const SizedBox(),
           )
         ],
       ),
@@ -91,7 +90,7 @@ class JobDetailScreen extends ConsumerWidget {
                   decoration: BoxDecoration(
                     color: Theme.of(context).cardColor,
                     borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: Colors.grey.withOpacity(0.1)),
+                    border: Border.all(color: Colors.grey.withValues(alpha: 0.1)),
                   ),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -179,7 +178,7 @@ class JobDetailScreen extends ConsumerWidget {
                        runSpacing: 8,
                        children: job.keywords!.map((k) => Chip(
                          label: Text(k, style: const TextStyle(fontSize: 12)),
-                         backgroundColor: Colors.indigo.withOpacity(0.05),
+                         backgroundColor: Colors.indigo.withValues(alpha: 0.05),
                        )).toList(),
                      )
                   ]
@@ -215,9 +214,9 @@ class JobDetailScreen extends ConsumerWidget {
                   width: double.infinity,
                   padding: const EdgeInsets.all(24),
                   decoration: BoxDecoration(
-                    gradient: LinearGradient(colors: [Colors.indigo.withOpacity(0.05), Colors.purple.withOpacity(0.05)]),
+                    gradient: LinearGradient(colors: [Colors.indigo.withValues(alpha: 0.05), Colors.purple.withValues(alpha: 0.05)]),
                     borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: Colors.indigo.withOpacity(0.1)),
+                    border: Border.all(color: Colors.indigo.withValues(alpha: 0.1)),
                   ),
                   child: Column(
                     children: [

@@ -190,10 +190,10 @@ class _KanbanColumn extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return DragTarget<JobModel>(
-      onWillAccept: (data) => true,
-      onAccept: (job) {
-         if (job.status != statusId) {
-            ref.read(jobsControllerProvider.notifier).updateStatus(job.id, statusId);
+      onWillAcceptWithDetails: (data) => true,
+      onAcceptWithDetails: (details) {
+         if (details.data.status != statusId) {
+            ref.read(jobsControllerProvider.notifier).updateStatus(details.data.id, statusId);
          }
       },
       builder: (context, candidateData, rejectedData) {
@@ -201,7 +201,7 @@ class _KanbanColumn extends ConsumerWidget {
           width: 300,
           margin: const EdgeInsets.only(right: 16),
           decoration: BoxDecoration(
-            color: Theme.of(context).cardColor.withOpacity(0.5),
+            color: Theme.of(context).cardColor.withValues(alpha: 0.5),
             borderRadius: BorderRadius.circular(16),
             border: Border.all(
               color: candidateData.isNotEmpty ? Colors.indigo : Colors.transparent,
@@ -236,7 +236,7 @@ class _KanbanColumn extends ConsumerWidget {
                 child: ListView.separated(
                   padding: const EdgeInsets.all(12),
                   itemCount: jobs.length,
-                  separatorBuilder: (_, __) => const SizedBox(height: 12),
+                  separatorBuilder: (context, index) => const SizedBox(height: 12),
                   itemBuilder: (context, index) {
                     final job = jobs[index];
                     return Draggable<JobModel>(

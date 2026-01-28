@@ -1,13 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:firebase_auth/firebase_auth.dart'; // Import User type
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'features/dashboard/dashboard_screen.dart';
+import 'features/tracker/job_tracker_screen.dart';
 import 'features/auth/login_screen.dart';
 import 'features/splash/splash_screen.dart';
 import 'features/auth/auth_repository.dart';
 import 'features/jobs/job_detail_screen.dart';
 import 'features/profile/profile_screen.dart';
+import 'features/settings/settings_screen.dart';
+import 'features/notifications/notifications_screen.dart';
+import 'features/upcoming/upcoming_features_screen.dart';
 
 final routerProvider = Provider<GoRouter>((ref) {
   final authState = ValueNotifier<AsyncValue<User?>>(const AsyncValue.loading());
@@ -37,8 +41,24 @@ final routerProvider = Provider<GoRouter>((ref) {
         builder: (context, state) => const DashboardScreen(),
       ),
       GoRoute(
+        path: '/tracker',
+        builder: (context, state) => const JobTrackerScreen(),
+      ),
+      GoRoute(
         path: '/profile',
         builder: (context, state) => const ProfileScreen(),
+      ),
+      GoRoute(
+        path: '/settings',
+        builder: (context, state) => const SettingsScreen(),
+      ),
+      GoRoute(
+        path: '/notifications',
+        builder: (context, state) => const NotificationsScreen(),
+      ),
+      GoRoute(
+        path: '/upcoming',
+        builder: (context, state) => const UpcomingFeaturesScreen(),
       ),
       GoRoute(
         path: '/job/:id',
@@ -50,17 +70,14 @@ final routerProvider = Provider<GoRouter>((ref) {
       
       final isLoading = value.isLoading;
       final hasError = value.hasError;
-      final isLoggedIn = value.valueOrNull != null;
+      final isLoggedIn = value.value != null;
       
       final isSplash = state.uri.toString() == '/';
       final isLogin = state.uri.toString() == '/login';
 
-      if (isLoading || hasError) return null; // Wait for stream to emit data
+      if (isLoading || hasError) return null;
 
       if (isSplash) {
-        // Splash screen handles its own timing & checks. 
-        // We do NOT want to interrupt it unless we want to enforce redirect immediately.
-        // But for this MVP, let's allow Splash to finish.
         return null; 
       }
 

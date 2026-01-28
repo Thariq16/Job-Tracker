@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'auth_repository.dart';
 
@@ -14,15 +13,16 @@ class LoginScreen extends ConsumerStatefulWidget {
 class _LoginScreenState extends ConsumerState<LoginScreen> {
   bool _isLoading = false;
 
-  Future<void> _signIn() async {
+  Future<void> _signInWithGoogle() async {
     setState(() => _isLoading = true);
     try {
       await ref.read(authRepositoryProvider).signInWithGoogle();
-      // Navigation is handled by auth state listener in router or main
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Login Failed: $e')),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Login Failed: $e'), backgroundColor: Colors.red),
+        );
+      }
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -37,10 +37,14 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              SvgPicture.asset(
-                'assets/logo.svg',
+              Container(
                 width: 120,
                 height: 120,
+                decoration: BoxDecoration(
+                  color: Colors.indigo.withValues(alpha: 0.1),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(Icons.rocket_launch, size: 60, color: Colors.indigo),
               ),
               const SizedBox(height: 32),
               Text(
@@ -66,8 +70,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 const CircularProgressIndicator()
               else
                 ElevatedButton.icon(
-                  onPressed: _signIn,
-                  icon: const Icon(Icons.login),
+                  onPressed: _signInWithGoogle,
+                  icon: const Icon(Icons.g_mobiledata, size: 24),
                   label: const Text('Sign in with Google'),
                   style: ElevatedButton.styleFrom(
                     padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),

@@ -1,0 +1,74 @@
+﻿   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\core\app_drawer.dart:48:49 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\core\app_drawer.dart:76:41 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\core\app_drawer.dart:173:48 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\core\app_drawer.dart:237:28 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\core\skeleton_loader.dart:118:44 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\core\theme.dart:169:35 - deprecated_member_use
+  error - The function 'StateProvider' isn't defined - lib\core\theme_provider.dart:4:27 - undefined_function
+warning - Unused import: 'package:flutter/foundation.dart' - lib\features\auth\auth_repository.dart:1:8 - unused_import
+warning - Unused import: 'package:cloud_firestore/cloud_firestore.dart' - lib\features\auth\auth_repository.dart:3:8 - unused_import
+warning - Unused import: 'auth_repository.dart' - lib\features\auth\login_screen.dart:5:8 - unused_import
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\dashboard\job_card.dart:93:39 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\dashboard\job_card.dart:94:39 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\dashboard\job_card.dart:212:44 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\dashboard\job_card.dart:214:63 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\dashboard\job_card.dart:255:23 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\dashboard\job_card.dart:256:39 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\dashboard\job_card.dart:259:39 - deprecated_member_use
+   info - 'value' is deprecated and shouldn't be used. Use initialValue instead. This will set the initial value for the form field. This feature was deprecated after v3.33.0-1.0.pre - lib\features\jobs\add_job_modal.dart:191:17 - deprecated_member_use
+   info - 'value' is deprecated and shouldn't be used. Use initialValue instead. This will set the initial value for the form field. This feature was deprecated after v3.33.0-1.0.pre - lib\features\jobs\add_job_modal.dart:228:23 - deprecated_member_use
+   info - Unnecessary use of multiple underscores - lib\features\jobs\job_detail_screen.dart:45:24 - unnecessary_underscores
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\jobs\job_detail_screen.dart:93:59 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\jobs\job_detail_screen.dart:181:57 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\jobs\job_detail_screen.dart:217:69 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\jobs\job_detail_screen.dart:217:102 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\jobs\job_detail_screen.dart:219:61 - deprecated_member_use
+  error - The function 'StateNotifierProvider' isn't defined - lib\features\jobs\jobs_provider.dart:11:32 - undefined_function
+  error - Classes can only extend other classes - lib\features\jobs\jobs_provider.dart:15:30 - extends_non_class
+  error - Too many positional arguments: 0 expected, but 1 found - lib\features\jobs\jobs_provider.dart:18:44 - extra_positional_arguments
+  error - Undefined name 'state' - lib\features\jobs\jobs_provider.dart:37:5 - undefined_identifier
+  error - Undefined name 'state' - lib\features\jobs\jobs_provider.dart:64:7 - undefined_identifier
+  error - Undefined name 'state' - lib\features\jobs\jobs_provider.dart:66:7 - undefined_identifier
+  error - Undefined name 'state' - lib\features\jobs\jobs_provider.dart:99:5 - undefined_identifier
+  error - Undefined name 'state' - lib\features\jobs\jobs_provider.dart:128:7 - undefined_identifier
+  error - Undefined name 'state' - lib\features\jobs\jobs_provider.dart:130:7 - undefined_identifier
+  error - The getter 'status' isn't defined for the type 'DragTargetDetails<JobModel>' - lib\features\kanban\kanban_board.dart:195:18 - undefined_getter
+  error - The getter 'id' isn't defined for the type 'DragTargetDetails<JobModel>' - lib\features\kanban\kanban_board.dart:196:72 - undefined_getter
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\kanban\kanban_board.dart:204:48 - deprecated_member_use
+   info - Unnecessary use of multiple underscores - lib\features\kanban\kanban_board.dart:239:41 - unnecessary_underscores
+   info - Unnecessary use of multiple underscores - lib\features\notifications\notifications_screen.dart:66:37 - unnecessary_underscores
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\notifications\notifications_screen.dart:73:65 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\notifications\notifications_screen.dart:74:50 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\notifications\notifications_screen.dart:77:52 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\notifications\notifications_screen.dart:86:72 - deprecated_member_use
+  error - The named parameter 'padding' is required, but there's no corresponding argument - lib\features\profile\profile_screen.dart:103:13 - missing_required_argument
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\settings\settings_screen.dart:118:42 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\settings\settings_screen.dart:121:44 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\upcoming\upcoming_features_screen.dart:154:41 - deprecated_member_use
+warning - The value of the local variable 'index' isn't used - lib\features\upcoming\upcoming_features_screen.dart:176:19 - unused_local_variable
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\upcoming\upcoming_features_screen.dart:187:44 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\upcoming\upcoming_features_screen.dart:190:46 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\upcoming\upcoming_features_screen.dart:241:38 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\upcoming\upcoming_features_screen.dart:244:40 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\upcoming\upcoming_features_screen.dart:253:60 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\upcoming\upcoming_features_screen.dart:293:50 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\upcoming\upcoming_features_screen.dart:318:44 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\upcoming\upcoming_features_screen.dart:318:76 - deprecated_member_use
+  error - The getter 'valueOrNull' isn't defined for the type 'AsyncValue<User?>' - lib\router.dart:73:32 - undefined_getter
+   info - Statements in an if should be enclosed in a block - lib\services\job_parsing_service.dart:35:38 - curly_braces_in_flow_control_structures
+   info - Statements in an if should be enclosed in a block - lib\services\job_parsing_service.dart:36:41 - curly_braces_in_flow_control_structures
+   info - Statements in an if should be enclosed in a block - lib\services\job_parsing_service.dart:37:39 - curly_braces_in_flow_control_structures
+   info - Statements in an if should be enclosed in a block - lib\services\job_parsing_service.dart:38:12 - curly_braces_in_flow_control_structures
+   info - Statements in an if should be enclosed in a block - lib\services\job_parsing_service.dart:40:62 - curly_braces_in_flow_control_structures
+   info - Statements in an if should be enclosed in a block - lib\services\job_parsing_service.dart:41:68 - curly_braces_in_flow_control_structures
+
+flutter : 63 issues found. (ran in 3.8s)
+At line:1 char:1
++ flutter analyze --no-preamble 2>&1 | Out-File 
+-FilePath analyze_outpu ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (63 issue 
+   s found. (ran in 3.8s):String) [], RemoteExceptio  
+  n
+    + FullyQualifiedErrorId : NativeCommandError
+ 

@@ -87,11 +87,11 @@ class SkeletonJobCard extends StatelessWidget {
                   const SizedBox(height: 8),
                   SkeletonLoader(height: 12, width: MediaQuery.of(context).size.width * 0.25),
                   const SizedBox(height: 12),
-                  Row(
+                  const Row(
                     children: [
-                      const SkeletonLoader(width: 60, height: 20, borderRadius: 6),
-                      const SizedBox(width: 8),
-                      const SkeletonLoader(width: 40, height: 20, borderRadius: 6),
+                      SkeletonLoader(width: 60, height: 20, borderRadius: 6),
+                      SizedBox(width: 8),
+                      SkeletonLoader(width: 40, height: 20, borderRadius: 6),
                     ],
                   ),
                 ],
@@ -115,7 +115,7 @@ class SkeletonKanbanColumn extends StatelessWidget {
       width: 300,
       margin: const EdgeInsets.only(right: 16),
       decoration: BoxDecoration(
-        color: Theme.of(context).cardColor.withOpacity(0.5),
+        color: Theme.of(context).cardColor.withValues(alpha: 0.5),
         borderRadius: BorderRadius.circular(16),
       ),
       child: Column(
@@ -126,11 +126,11 @@ class SkeletonKanbanColumn extends StatelessWidget {
               color: Theme.of(context).colorScheme.surface,
               borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
             ),
-            child: Row(
+            child: const Row(
               children: [
-                const SkeletonLoader(width: 80, height: 14),
-                const Spacer(),
-                const SkeletonLoader(width: 24, height: 20, borderRadius: 8),
+                SkeletonLoader(width: 80, height: 14),
+                Spacer(),
+                SkeletonLoader(width: 24, height: 20, borderRadius: 8),
               ],
             ),
           ),
