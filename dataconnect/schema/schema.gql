@@ -1,0 +1,52 @@
+type User @table {
+  displayName: String!
+  email: String!
+  createdAt: Timestamp!
+  photoUrl: String
+}
+
+type JobApplication @table {
+  user: User!
+  companyName: String!
+  jobTitle: String!
+  applicationDate: Date!
+  status: String!
+  createdAt: Timestamp!
+  updatedAt: Timestamp!
+  jobLink: String
+  salaryExpectation: String
+  location: String
+  notes: String
+}
+
+type Interaction @table {
+  jobApplication: JobApplication!
+  interactionType: String!
+  interactionDate: Date!
+  createdAt: Timestamp!
+  notes: String
+  contactName: String
+  contactEmail: String
+  contactPhone: String
+}
+
+type Interview @table {
+  jobApplication: JobApplication!
+  interviewDate: Timestamp!
+  interviewType: String!
+  createdAt: Timestamp!
+  updatedAt: Timestamp!
+  notes: String
+  interviewerNames: [String]
+  location: String
+}
+
+type Reminder @table {
+  user: User!
+  jobApplication: JobApplication!
+  reminderDate: Timestamp!
+  message: String!
+  isCompleted: Boolean!
+  createdAt: Timestamp!
+  interaction: Interaction
+}

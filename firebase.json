@@ -1,0 +1,1 @@
+{"firestore":{"rules":"firestore.rules","indexes":"firestore.indexes.json"},"functions":[{"source":"functions","codebase":"default","ignore":["node_modules",".git","firebase-debug.log","firebase-debug.log.*"]}],"flutter":{"platforms":{"dart":{"lib/firebase_options.dart":{"projectId":"jobtracker-42196","configurations":{"web":"1:43725413571:web:2c221ac3059c38e625d676"}}}}}}

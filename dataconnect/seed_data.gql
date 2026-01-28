@@ -1,0 +1,60 @@
+mutation SeedDatabase @auth(level: NO_ACCESS) @transaction {
+  user_insertMany(data: [
+    {
+      id: "550e8400-e29b-41d4-a716-446655440000",
+      displayName: "Demo User 1",
+      email: "demouser1@example.com",
+      createdAt: "2024-01-01T00:00:00Z"
+    },
+    {
+      id: "550e8400-e29b-41d4-a716-446655440001",
+      displayName: "Demo User 2",
+      email: "demouser2@example.com",
+      createdAt: "2024-01-02T00:00:00Z"
+    }
+  ])
+  jobApplication_insertMany(data: [
+    {
+      id: "650e8400-e29b-41d4-a716-446655440002",
+      userId: "550e8400-e29b-41d4-a716-446655440000",
+      applicationDate: "2024-01-15",
+      companyName: "Example Corp",
+      jobTitle: "Software Engineer",
+      status: "Applied",
+      createdAt: "2024-01-15T10:00:00Z",
+      updatedAt: "2024-01-15T10:00:00Z"
+    },
+    {
+      id: "650e8400-e29b-41d4-a716-446655440003",
+      userId: "550e8400-e29b-41d4-a716-446655440001",
+      applicationDate: "2024-01-20",
+      companyName: "Another Company",
+      jobTitle: "Data Scientist",
+      status: "Interviewing",
+      createdAt: "2024-01-20T14:00:00Z",
+      updatedAt: "2024-01-22T16:00:00Z"
+    }
+  ])
+  interaction_insertMany(data: [
+    {
+      id: "750e8400-e29b-41d4-a716-446655440004",
+      jobApplicationId: "650e8400-e29b-41d4-a716-446655440002",
+      interactionType: "Email",
+      interactionDate: "2024-01-18",
+      createdAt: "2024-01-18T12:00:00Z",
+      contactName: "HR Contact",
+      contactEmail: "hr@example.com"
+    }
+  ])
+  reminder_insertMany(data: [
+    {
+      id: "850e8400-e29b-41d4-a716-446655440005",
+      jobApplicationId: "650e8400-e29b-41d4-a716-446655440002",
+      userId: "550e8400-e29b-41d4-a716-446655440000",
+      message: "Follow up on application",
+      reminderDate: "2024-01-22T09:00:00Z",
+      createdAt: "2024-01-19T15:00:00Z",
+      isCompleted: false
+    }
+  ])
+}
