@@ -30,8 +30,9 @@ class ProfileRepository {
   Future<void> updateProfile({
     String? fullName,
     String? jobTitle,
+    String? phoneCode,
     String? phoneNumber,
-    String? targetRole,
+    List<String>? targetRoles,
     String? currentCountry,
     String? targetCountry,
     bool? willingToRelocate,
@@ -39,8 +40,9 @@ class ProfileRepository {
     final Map<String, dynamic> data = {};
     if (fullName != null) data['fullName'] = fullName;
     if (jobTitle != null) data['jobTitle'] = jobTitle;
+    if (phoneCode != null) data['phoneCode'] = phoneCode;
     if (phoneNumber != null) data['phoneNumber'] = phoneNumber;
-    if (targetRole != null) data['targetRole'] = targetRole;
+    if (targetRoles != null) data['targetRoles'] = targetRoles;
     if (currentCountry != null) data['currentCountry'] = currentCountry;
     if (targetCountry != null) data['targetCountry'] = targetCountry;
     if (willingToRelocate != null) data['willingToRelocate'] = willingToRelocate;

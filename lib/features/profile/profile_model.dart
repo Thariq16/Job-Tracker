@@ -7,8 +7,9 @@ class UserProfile {
   final String? cvUrl;
   final String? cvName;
   final String? jobTitle;
+  final String? phoneCode;
   final String? phoneNumber;
-  final String? targetRole;
+  final List<String>? targetRoles;
   final String? currentCountry;
   final String? targetCountry;
   final bool? willingToRelocate;
@@ -20,8 +21,9 @@ class UserProfile {
     this.cvUrl,
     this.cvName,
     this.jobTitle,
+    this.phoneCode,
     this.phoneNumber,
-    this.targetRole,
+    this.targetRoles,
     this.currentCountry,
     this.targetCountry,
     this.willingToRelocate,
@@ -34,8 +36,9 @@ class UserProfile {
       'cvUrl': cvUrl,
       'cvName': cvName,
       'jobTitle': jobTitle,
+      'phoneCode': phoneCode,
       'phoneNumber': phoneNumber,
-      'targetRole': targetRole,
+      'targetRoles': targetRoles,
       'currentCountry': currentCountry,
       'targetCountry': targetCountry,
       'willingToRelocate': willingToRelocate,
@@ -53,8 +56,11 @@ class UserProfile {
       cvUrl: data['cvUrl'],
       cvName: data['cvName'],
       jobTitle: data['jobTitle'],
+      phoneCode: data['phoneCode'],
       phoneNumber: data['phoneNumber'],
-      targetRole: data['targetRole'],
+      targetRoles: data['targetRoles'] != null 
+          ? List<String>.from(data['targetRoles']) 
+          : (data['targetRole'] != null ? [data['targetRole']] : null),
       currentCountry: data['currentCountry'],
       targetCountry: data['targetCountry'],
       willingToRelocate: data['willingToRelocate'],
