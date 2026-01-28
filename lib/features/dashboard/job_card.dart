@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'package:intl/intl.dart';
 
 class JobCard extends StatelessWidget {
   final String company;
@@ -33,8 +32,6 @@ class JobCard extends StatelessWidget {
 
   String _getFlag(String? countryCode) {
     if (countryCode == null) return '';
-    // Simple mapping for common codes, or use a package.
-    // MVP: Just text or simple emoji map
     const flags = {
       'US': '🇺🇸', 'USA': '🇺🇸', 'AE': '🇦🇪', 'UAE': '🇦🇪', 
       'UK': '🇬🇧', 'GB': '🇬🇧', 'CA': '🇨🇦', 'IN': '🇮🇳',
@@ -43,33 +40,16 @@ class JobCard extends StatelessWidget {
     return flags[countryCode.toUpperCase()] ?? countryCode.toUpperCase();
   }
 
-  Color _getWorkModeColor(String? mode) {
-    switch (mode?.toLowerCase()) {
-      case 'remote': return Colors.green;
-      case 'hybrid': return Colors.blue;
-      case 'onsite': return Colors.orange;
-      default: return Colors.grey;
-    }
-  }
-
   Color _getStatusColor(String status) {
     switch (status.toLowerCase()) {
-      case 'applied':
-        return Colors.blue;
-      case 'cv_viewed':
-        return Colors.purple;
-      case 'cv_downloaded':
-        return Colors.deepPurple;
-      case 'interviewing':
-        return Colors.orange;
-      case 'offer':
-        return Colors.green;
-      case 'rejected':
-        return Colors.red;
-      case 'ghosted':
-        return Colors.grey;
-      default:
-        return Colors.grey;
+      case 'applied': return const Color(0xFF3B82F6);
+      case 'cv_viewed': return const Color(0xFF8B5CF6);
+      case 'cv_downloaded': return const Color(0xFF7C3AED);
+      case 'interviewing': return const Color(0xFFF59E0B);
+      case 'offer': return const Color(0xFF10B981);
+      case 'rejected': return const Color(0xFFEF4444);
+      case 'ghosted': return const Color(0xFF6B7280);
+      default: return const Color(0xFF6B7280);
     }
   }
 
@@ -80,179 +60,212 @@ class JobCard extends StatelessWidget {
   String _daysSince(DateTime date) {
     final days = DateTime.now().difference(date).inDays;
     if (days == 0) return 'Today';
-    if (days == 1) return 'Yesterday';
-    return '$days days ago';
+    if (days == 1) return '1d';
+    if (days < 7) return '${days}d';
+    if (days < 30) return '${(days / 7).floor()}w';
+    return '${(days / 30).floor()}mo';
   }
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final statusColor = _getStatusColor(status);
+    
     return Card(
-      margin: const EdgeInsets.only(bottom: 12),
+      margin: EdgeInsets.zero,
       child: InkWell(
         onTap: onTap,
         borderRadius: BorderRadius.circular(16),
         child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Row(
+          padding: const EdgeInsets.all(14),
+          child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Company Logo Placeholder or Icon
-              Container(
-                width: 48,
-                height: 48,
-                decoration: BoxDecoration(
-                  color: Colors.grey[100],
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Center(
-                  child: Text(
-                    company.isNotEmpty ? company[0].toUpperCase() : '?',
-                    style: GoogleFonts.inter(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.black87,
+              // Top Row: Company + Time
+              Row(
+                children: [
+                  // Company Avatar
+                  Container(
+                    width: 36,
+                    height: 36,
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [
+                          statusColor.withOpacity(0.2),
+                          statusColor.withOpacity(0.1),
+                        ],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ),
+                      borderRadius: BorderRadius.circular(10),
                     ),
-                  ),
-                ),
-              ),
-              const SizedBox(width: 16),
-              // Content
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Expanded(
-                          child: Text(
-                            role,
-                            style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                                  fontWeight: FontWeight.w600,
-                                ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                        // Date Tracker
-                        Text(
-                           _daysSince(appliedDate),
-                           style: GoogleFonts.inter(fontSize: 12, color: Colors.grey[600]),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      company,
-                      style: Theme.of(context).textTheme.bodyMedium,
-                    ),
-                    
-                    const SizedBox(height: 8),
-                    Wrap(
-                      spacing: 8, 
-                      crossAxisAlignment: WrapCrossAlignment.center,
-                      children: [
-                        // Source Badge
-                        if (source != null) 
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                            decoration: BoxDecoration(
-                              color: Colors.grey[200],
-                              borderRadius: BorderRadius.circular(6),
-                            ),
-                            child: Text(
-                              source!,
-                              style: GoogleFonts.inter(fontSize: 10, color: Colors.grey[800]), 
-                            ),
-                          ),
-                        
-                        // Country Flag
-                        if (country != null)
-                           Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                            decoration: BoxDecoration(
-                              color: Colors.grey[100],
-                              borderRadius: BorderRadius.circular(6),
-                              border: Border.all(color: Colors.grey[300]!)
-                            ),
-                            child: Text(
-                              _getFlag(country),
-                              style: const TextStyle(fontSize: 12), 
-                            ),
-                          ),
-
-                        // Work Mode
-                        if (workMode != null)
-                           Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                            decoration: BoxDecoration(
-                              color: _getWorkModeColor(workMode).withOpacity(0.1),
-                              borderRadius: BorderRadius.circular(6),
-                              border: Border.all(color: _getWorkModeColor(workMode).withOpacity(0.3))
-                            ),
-                            child: Text(
-                              workMode![0].toUpperCase() + workMode!.substring(1),
-                              style: GoogleFonts.inter(fontSize: 10, fontWeight: FontWeight.w600, color: _getWorkModeColor(workMode)), 
-                            ),
-                          ),
-                      ],
-                    ),
-                    
-                    if (hiringManagerName != null) ...[
-                       const SizedBox(height: 8),
-                       Row(
-                         children: [
-                           Icon(Icons.person_pin, size: 14, color: Colors.indigo[300]),
-                           const SizedBox(width: 4),
-                           Text("Hiring: $hiringManagerName", style: GoogleFonts.inter(fontSize: 11, color: Colors.indigo[300])),
-                           if (hiringManagerUrl != null) ...[
-                              const SizedBox(width: 8),
-                              InkWell(
-                                onTap: () => launchUrl(Uri.parse(hiringManagerUrl!)),
-                                child: Icon(Icons.link, size: 14, color: Colors.indigo[300]),
-                              )
-                           ]
-                         ],
-                       )
-                    ]
-                  ],
-                ),
-              ),
-              const SizedBox(width: 8),
-              // Status Badge with Popup
-              PopupMenuButton<String>(
-                initialValue: status,
-                onSelected: onStatusChanged,
-                itemBuilder: (context) => [
-                  'applied', 'cv_viewed', 'cv_downloaded', 'interviewing', 'offer', 'rejected', 'ghosted'
-                ].map((s) => PopupMenuItem(
-                  value: s,
-                  child: Text(_formatStatus(s), style: const TextStyle(fontSize: 12)),
-                )).toList(),
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                  decoration: BoxDecoration(
-                    color: _getStatusColor(status).withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: Row(
-                    children: [
-                      Text(
-                        _formatStatus(status),
-                        style: GoogleFonts.inter(
-                          fontSize: 10,
+                    child: Center(
+                      child: Text(
+                        company.isNotEmpty ? company[0].toUpperCase() : '?',
+                        style: GoogleFonts.outfit(
+                          fontSize: 16,
                           fontWeight: FontWeight.bold,
-                          color: _getStatusColor(status),
+                          color: statusColor,
                         ),
                       ),
-                      const SizedBox(width: 4),
-                      Icon(Icons.arrow_drop_down, size: 14, color: _getStatusColor(status)),
-                    ],
+                    ),
                   ),
-                ),
+                  const SizedBox(width: 10),
+                  // Company & Role
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          role,
+                          style: GoogleFonts.inter(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                            color: isDark ? Colors.white : Colors.black87,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          company,
+                          style: GoogleFonts.inter(
+                            fontSize: 12,
+                            color: isDark ? Colors.grey[400] : Colors.grey[600],
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ],
+                    ),
+                  ),
+                  // Time Badge
+                  Text(
+                    _daysSince(appliedDate),
+                    style: GoogleFonts.inter(
+                      fontSize: 11,
+                      color: Colors.grey[500],
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ],
+              ),
+              
+              const SizedBox(height: 12),
+              
+              // Bottom Row: Badges + Status
+              Row(
+                children: [
+                  // Meta badges (compact inline)
+                  Expanded(
+                    child: Wrap(
+                      spacing: 6,
+                      runSpacing: 4,
+                      children: [
+                        if (country != null)
+                          _buildMiniChip(_getFlag(country), isDark),
+                        if (workMode != null)
+                          _buildMiniChip(
+                            workMode!.substring(0, 1).toUpperCase() + workMode!.substring(1),
+                            isDark,
+                            color: workMode?.toLowerCase() == 'remote' 
+                                ? Colors.green 
+                                : workMode?.toLowerCase() == 'hybrid' 
+                                    ? Colors.blue 
+                                    : Colors.orange,
+                          ),
+                        if (source != null)
+                          _buildMiniChip(source!, isDark),
+                      ],
+                    ),
+                  ),
+                  
+                  // Status Dropdown
+                  PopupMenuButton<String>(
+                    padding: EdgeInsets.zero,
+                    initialValue: status,
+                    onSelected: onStatusChanged,
+                    position: PopupMenuPosition.under,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    itemBuilder: (context) => [
+                      'applied', 'cv_viewed', 'interviewing', 'offer', 'rejected', 'ghosted'
+                    ].map((s) => PopupMenuItem(
+                      value: s,
+                      height: 36,
+                      child: Row(
+                        children: [
+                          Container(
+                            width: 8,
+                            height: 8,
+                            decoration: BoxDecoration(
+                              color: _getStatusColor(s),
+                              shape: BoxShape.circle,
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Text(_formatStatus(s), style: GoogleFonts.inter(fontSize: 12)),
+                        ],
+                      ),
+                    )).toList(),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                      decoration: BoxDecoration(
+                        color: statusColor.withOpacity(isDark ? 0.2 : 0.1),
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: statusColor.withOpacity(0.3)),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Container(
+                            width: 6,
+                            height: 6,
+                            decoration: BoxDecoration(
+                              color: statusColor,
+                              shape: BoxShape.circle,
+                            ),
+                          ),
+                          const SizedBox(width: 6),
+                          Text(
+                            _formatStatus(status),
+                            style: GoogleFonts.inter(
+                              fontSize: 10,
+                              fontWeight: FontWeight.w600,
+                              color: statusColor,
+                            ),
+                          ),
+                          const SizedBox(width: 2),
+                          Icon(Icons.keyboard_arrow_down, size: 14, color: statusColor),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ],
           ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildMiniChip(String text, bool isDark, {Color? color}) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+      decoration: BoxDecoration(
+        color: color?.withOpacity(isDark ? 0.2 : 0.1) ?? 
+               (isDark ? Colors.white.withOpacity(0.08) : Colors.grey[100]),
+        borderRadius: BorderRadius.circular(6),
+        border: color != null 
+            ? Border.all(color: color.withOpacity(0.3))
+            : null,
+      ),
+      child: Text(
+        text,
+        style: GoogleFonts.inter(
+          fontSize: 10,
+          fontWeight: FontWeight.w500,
+          color: color ?? (isDark ? Colors.grey[400] : Colors.grey[600]),
         ),
       ),
     );
