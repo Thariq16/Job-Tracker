@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:job_tracker/features/jobs/job_model.dart';
 import 'package:job_tracker/features/jobs/jobs_provider.dart';
+import 'package:job_tracker/core/skeleton_loader.dart';
 import '../dashboard/job_card.dart';
 import 'package:go_router/go_router.dart';
 
@@ -12,13 +13,15 @@ class KanbanBoard extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final jobsAsync = ref.watch(jobsStreamProvider);
+    final screenWidth = MediaQuery.of(context).size.width;
+    final isMobile = screenWidth < 600;
 
     return jobsAsync.when(
       data: (jobs) {
         // Group jobs by status
         final Map<String, List<JobModel>> columns = {
           'applied': [],
-          'cv_viewed': [], // Grouped?
+          'cv_viewed': [],
           'interviewing': [],
           'offer': [],
           'rejected': [],
@@ -30,8 +33,6 @@ class KanbanBoard extends ConsumerWidget {
            if (columns.containsKey(status)) {
              columns[status]!.add(job);
            } else if (status == 'cv_downloaded' || status == 'ghosted') {
-             // Map some statuses to close ones or add new keys if we want all columns
-             // MVP: Let's map cv_downloaded to cv_viewed for simplicity? Or add key.
              if (status == 'cv_downloaded') { 
                 if (!columns.containsKey('cv_viewed')) columns['cv_viewed'] = [];
                 columns['cv_viewed']!.add(job);
@@ -40,15 +41,55 @@ class KanbanBoard extends ConsumerWidget {
                 columns[status]!.add(job);
              }
            } else {
-              // Catch all
               if (!columns.containsKey('other')) columns['other'] = [];
               columns['other']!.add(job);
            }
         }
         
-        // Define Column Order
         final orderedKeys = ['applied', 'cv_viewed', 'interviewing', 'offer', 'rejected', 'ghosted'];
 
+        // Mobile: Vertical tabs layout
+        if (isMobile) {
+          return DefaultTabController(
+            length: orderedKeys.length,
+            child: Column(
+              children: [
+                TabBar(
+                  isScrollable: true,
+                  labelColor: Theme.of(context).colorScheme.primary,
+                  unselectedLabelColor: Colors.grey,
+                  tabs: orderedKeys.map((status) => Tab(
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(status.replaceAll('_', ' ').toUpperCase(), style: const TextStyle(fontSize: 12)),
+                        const SizedBox(width: 6),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: Colors.grey[200],
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Text('${columns[status]?.length ?? 0}', style: const TextStyle(fontSize: 10)),
+                        ),
+                      ],
+                    ),
+                  )).toList(),
+                ),
+                Expanded(
+                  child: TabBarView(
+                    children: orderedKeys.map((status) {
+                      final columnJobs = columns[status] ?? [];
+                      return _MobileColumnView(statusId: status, jobs: columnJobs);
+                    }).toList(),
+                  ),
+                ),
+              ],
+            ),
+          );
+        }
+
+        // Desktop: Horizontal scroll
         return SingleChildScrollView(
           scrollDirection: Axis.horizontal,
           padding: const EdgeInsets.all(16),
@@ -65,14 +106,82 @@ class KanbanBoard extends ConsumerWidget {
           ),
         );
       },
-      loading: () => const Center(child: CircularProgressIndicator()),
+      loading: () => SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.all(16),
+        child: Row(
+          children: List.generate(4, (_) => const SkeletonKanbanColumn()),
+        ),
+      ),
       error: (e, _) => Center(child: Text('Error: $e')),
+    );
+  }
+}
+
+// Mobile view for a single column
+class _MobileColumnView extends ConsumerWidget {
+  final String statusId;
+  final List<JobModel> jobs;
+
+  const _MobileColumnView({required this.statusId, required this.jobs});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    if (jobs.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.inbox_outlined, size: 48, color: Colors.grey[400]),
+            const SizedBox(height: 12),
+            Text('No jobs here yet', style: TextStyle(color: Colors.grey[500])),
+          ],
+        ),
+      );
+    }
+    
+    return ListView.builder(
+      padding: const EdgeInsets.all(16),
+      itemCount: jobs.length,
+      itemBuilder: (context, index) {
+        final job = jobs[index];
+        return JobCard(
+          company: job.company,
+          role: job.role,
+          status: job.status,
+          appliedDate: job.appliedDate,
+          source: job.source,
+          country: job.country,
+          workMode: job.workMode,
+          onTap: () => context.push('/job/${job.id}'),
+          onStatusChanged: (newStatus) => _handleStatusChange(context, ref, job, newStatus),
+        );
+      },
+    );
+  }
+
+  void _handleStatusChange(BuildContext context, WidgetRef ref, JobModel job, String newStatus) {
+    final oldStatus = job.status;
+    ref.read(jobsControllerProvider.notifier).updateStatus(job.id, newStatus);
+    
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Moved to ${newStatus.replaceAll('_', ' ').toUpperCase()}'),
+        action: SnackBarAction(
+          label: 'Undo',
+          onPressed: () {
+            ref.read(jobsControllerProvider.notifier).updateStatus(job.id, oldStatus);
+          },
+        ),
+        duration: const Duration(seconds: 4),
+      ),
     );
   }
 }
 
 class _KanbanColumn extends ConsumerWidget {
   final String title;
+
   final String statusId;
   final List<JobModel> jobs;
 

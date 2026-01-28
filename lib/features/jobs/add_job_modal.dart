@@ -407,7 +407,17 @@ class _AddJobModalState extends ConsumerState<AddJobModal> {
           const SizedBox(height: 24),
           ElevatedButton(
             onPressed: () async {
-              if (_companyController.text.isEmpty || _roleController.text.isEmpty) {
+              // Form validation
+              if (_companyController.text.trim().isEmpty) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Company name is required'), backgroundColor: Colors.red),
+                );
+                return; 
+              }
+              if (_roleController.text.trim().isEmpty) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Role/Position is required'), backgroundColor: Colors.red),
+                );
                 return; 
               }
                             if (widget.jobToEdit != null) {
