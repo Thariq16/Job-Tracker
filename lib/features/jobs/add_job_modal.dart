@@ -6,6 +6,7 @@ import 'dart:typed_data';
 import 'package:file_picker/file_picker.dart';
 import 'package:http/http.dart' as http;
 import 'package:html/parser.dart' as parser;
+import 'package:html/dom.dart' as dom;
 import 'jobs_provider.dart';
 import 'job_model.dart'; // Import JobModel
 
@@ -207,7 +208,7 @@ class _AddJobModalState extends ConsumerState<AddJobModal> {
   }
 
   // Helper for Section Extraction
-  List<String> _extractSection(parser.Document document, List<String> headers) {
+  List<String> _extractSection(dom.Document document, List<String> headers) {
     final List<String> items = [];
     
     // 1. Find the headers
