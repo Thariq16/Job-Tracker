@@ -31,6 +31,7 @@ class _AddJobModalState extends ConsumerState<AddJobModal> {
     'LinkedIn',
     'Indeed',
     'Bayt',
+    'Zoho Recruit',
     'Professional Pyramid',
     'Career Page',
     'Other'

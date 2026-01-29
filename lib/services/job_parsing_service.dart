@@ -155,25 +155,54 @@ class JobParsingService {
   }
   
   Future<String?> _fetchJobPage(String url) async {
-    try {
-      var targetUrl = url;
-      // Use CORS proxy for Web to avoid blocking
-      if (kIsWeb) {
-        targetUrl = 'https://corsproxy.io/?' + Uri.encodeComponent(url);
+    // List of CORS proxies to try (in order of preference)
+    final corsProxies = kIsWeb ? [
+      'https://api.codetabs.com/v1/proxy?quest=',          // codetabs proxy
+      'https://thingproxy.freeboard.io/fetch/',            // freeboard proxy
+      'https://api.allorigins.win/raw?url=',               // allorigins (backup)
+    ] : [url]; // Direct URL for non-web platforms
+    
+    print('=== FETCH DEBUG ===');
+    print('Original URL: $url');
+    print('Is Web: $kIsWeb');
+    
+    for (final proxyBase in corsProxies) {
+      try {
+        final targetUrl = kIsWeb 
+            ? proxyBase + Uri.encodeComponent(url) 
+            : url;
+        
+        print('Trying proxy: $proxyBase');
+        print('Target URL: $targetUrl');
+        
+        final response = await http.get(
+          Uri.parse(targetUrl),
+          headers: {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+          },
+        ).timeout(const Duration(seconds: 15));
+        
+        print('Response status: ${response.statusCode}');
+        print('Response body length: ${response.body.length}');
+        
+        if (response.statusCode == 200) {
+          // Check if we got actual HTML content
+          if (response.body.contains('<html') || response.body.contains('<!DOCTYPE')) {
+            print('Got valid HTML response from proxy');
+            return response.body;
+          } else {
+            print('Response does not appear to be HTML, trying next proxy...');
+          }
+        } else {
+          print('Failed with status ${response.statusCode}, trying next proxy...');
+        }
+      } catch (e) {
+        print('Error with proxy: $e, trying next...');
       }
-      
-      final response = await http.get(Uri.parse(targetUrl), headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
-      });
-      
-      if (response.statusCode == 200) {
-        return response.body;
-      } else {
-        print('Failed to fetch job page: ${response.statusCode} for $targetUrl');
-      }
-    } catch (e) {
-      print('Network error fetching job page: $e');
     }
+    
+    print('All proxies failed');
     return null;
   }
   
@@ -188,16 +217,55 @@ class JobParsingService {
     List<String> benefits = List.from(baseData.benefits);
     List<String> keywords = List.from(baseData.keywords);
     
+    // Debug logging
+    print('=== JOB PARSING DEBUG ===');
+    print('Source: ${baseData.source}');
+    print('HTML length: ${htmlContent.length}');
+    
     // 1. Title Heuristics
     if (title == null) {
       final h1 = document.querySelector('h1')?.text.trim();
       final ogTitle = document.querySelector('meta[property="og:title"]')?.attributes['content'];
-      title = h1 ?? ogTitle;
+      final titleTag = document.querySelector('title')?.text.trim();
+      
+      print('h1: $h1');
+      print('og:title: $ogTitle');
+      print('title tag: $titleTag');
+      
+      // Try h1 first, then og:title, then title tag
+      String? rawTitle = h1;
+      if (rawTitle == null || rawTitle.isEmpty) {
+        rawTitle = ogTitle ?? titleTag;
+      }
+      
+      // Parse title - handle formats like "Company - Role - Type" or "Role | Company"
+      if (rawTitle != null && rawTitle.isNotEmpty) {
+        // Zoho Recruit format: "500 Global - Eurasia Marketing Coordinator - Remote Job"
+        if (rawTitle.contains(' - ')) {
+          final parts = rawTitle.split(' - ');
+          if (parts.length >= 2) {
+            // Second part is usually the role
+            title = parts[1].trim();
+            // First part is company if not already set
+            if (company == null && parts[0].isNotEmpty) {
+              company = parts[0].trim();
+            }
+          }
+        } else if (rawTitle.contains(' | ')) {
+          final parts = rawTitle.split(' | ');
+          title = parts[0].trim();
+        } else {
+          title = rawTitle;
+        }
+      }
+      
+      print('Extracted title: $title');
     }
     
     // 2. Company Heuristics - check multiple sources
     if (company == null) {
        company = document.querySelector('meta[property="og:site_name"]')?.attributes['content'];
+       print('og:site_name: $company');
     }
     
     // 2b. Look for "Company: xyz" pattern in page text
