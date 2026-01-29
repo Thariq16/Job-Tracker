@@ -174,25 +174,56 @@ class AppDrawer extends ConsumerWidget {
                 ),
               ),
             ),
-            child: Row(
+            child: Column(
               children: [
-                // Theme Toggle
-                IconButton(
-                  onPressed: () => toggleTheme(ref),
-                  icon: Icon(
-                    themeMode == ThemeMode.dark
-                        ? Icons.light_mode_rounded
-                        : Icons.dark_mode_rounded,
+                // Sign Out Button
+                SizedBox(
+                  width: double.infinity,
+                  child: OutlinedButton.icon(
+                    onPressed: () async {
+                      Navigator.pop(context);
+                      await FirebaseAuth.instance.signOut();
+                      if (context.mounted) {
+                        context.go('/login');
+                      }
+                    },
+                    icon: const Icon(Icons.logout, size: 18),
+                    label: Text(
+                      'Sign Out',
+                      style: GoogleFonts.inter(fontWeight: FontWeight.w500),
+                    ),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: Colors.red[400],
+                      side: BorderSide(color: Colors.red[300]!),
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                    ),
                   ),
-                  tooltip: themeMode == ThemeMode.dark ? 'Light Mode' : 'Dark Mode',
                 ),
-                const Spacer(),
-                Text(
-                  'v1.0.0',
-                  style: GoogleFonts.inter(
-                    fontSize: 12,
-                    color: Colors.grey[500],
-                  ),
+                const SizedBox(height: 12),
+                Row(
+                  children: [
+                    // Theme Toggle
+                    IconButton(
+                      onPressed: () => toggleTheme(ref),
+                      icon: Icon(
+                        themeMode == ThemeMode.dark
+                            ? Icons.light_mode_rounded
+                            : Icons.dark_mode_rounded,
+                      ),
+                      tooltip: themeMode == ThemeMode.dark ? 'Light Mode' : 'Dark Mode',
+                    ),
+                    const Spacer(),
+                    Text(
+                      'v1.0.0',
+                      style: GoogleFonts.inter(
+                        fontSize: 12,
+                        color: Colors.grey[500],
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),

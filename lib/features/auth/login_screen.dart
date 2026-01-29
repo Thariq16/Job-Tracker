@@ -37,14 +37,18 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Container(
-                width: 120,
-                height: 120,
-                decoration: BoxDecoration(
-                  color: Colors.indigo.withValues(alpha: 0.1),
-                  shape: BoxShape.circle,
-                ),
-                child: const Icon(Icons.rocket_launch, size: 60, color: Colors.indigo),
+              Builder(
+                builder: (context) {
+                  final isDark = Theme.of(context).brightness == Brightness.dark;
+                  return ClipRRect(
+                    borderRadius: BorderRadius.circular(24),
+                    child: Image.asset(
+                      isDark ? 'assets/icon_dark.png' : 'assets/icon_light.png',
+                      width: 120,
+                      height: 120,
+                    ),
+                  );
+                },
               ),
               const SizedBox(height: 32),
               Text(

@@ -38,7 +38,19 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-             Icon(Icons.rocket_launch, size: 100, color: Theme.of(context).primaryColor),
+             Builder(
+               builder: (context) {
+                 final isDark = Theme.of(context).brightness == Brightness.dark;
+                 return ClipRRect(
+                   borderRadius: BorderRadius.circular(24),
+                   child: Image.asset(
+                     isDark ? 'assets/icon_dark.png' : 'assets/icon_light.png',
+                     width: 100,
+                     height: 100,
+                   ),
+                 );
+               },
+             ),
               const SizedBox(height: 24),
               const CircularProgressIndicator(),
           ],
