@@ -190,9 +190,18 @@ class JobParsingService {
       title = h1 ?? ogTitle;
     }
     
-    // 2. Company Heuristics
+    // 2. Company Heuristics - check multiple sources
     if (company == null) {
        company = document.querySelector('meta[property="og:site_name"]')?.attributes['content'];
+    }
+    
+    // 2b. Look for "Company: xyz" pattern in page text
+    if (company == null) {
+      final pageText = document.body?.text ?? '';
+      final companyMatch = RegExp(r'Company[:\s]+([A-Za-z0-9\s&]+?)(?:\n|Location|Date|Job)', caseSensitive: false).firstMatch(pageText);
+      if (companyMatch != null) {
+        company = companyMatch.group(1)?.trim();
+      }
     }
     
     // 3. Section Keywords for parsing
@@ -215,6 +224,7 @@ class JobParsingService {
         'required skills',
         'must have',
         'experience required',
+        'years of experience',
       ],
       'benefits': [
         'benefits',
@@ -230,6 +240,7 @@ class JobParsingService {
         'overview',
         'about this job',
         'position summary',
+        'job purpose',
       ],
     };
 
@@ -331,6 +342,9 @@ class JobParsingService {
       'figma', 'sketch', 'ux', 'ui', 'design', 'research',
       'excel', 'powerpoint', 'jira', 'confluence', 'slack', 'notion',
       'fintech', 'healthtech', 'edtech', 'startup', 'enterprise',
+      // Telecom / IT infrastructure keywords
+      'oss', 'bss', 'telecom', 'networking', 'infrastructure', 'integration',
+      'cybersecurity', 'data governance', 'compliance', 'maintenance', 'deployment',
     ];
     
     final lowerText = text.toLowerCase();
