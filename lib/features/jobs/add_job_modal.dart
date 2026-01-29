@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'dart:typed_data';
+import 'package:job_tracker/services/job_parsing_service.dart';
 import 'jobs_provider.dart';
 import 'job_model.dart';
 
@@ -44,6 +45,7 @@ class _AddJobModalState extends ConsumerState<AddJobModal> {
   
   List<String> _responsibilities = [];
   List<String> _qualifications = [];
+  List<String> _benefits = [];
 
   @override
   void initState() {
@@ -61,6 +63,7 @@ class _AddJobModalState extends ConsumerState<AddJobModal> {
       _keywords = List.from(job.keywords ?? []);
       _responsibilities = List.from(job.responsibilities ?? []);
       _qualifications = List.from(job.qualifications ?? []);
+      _benefits = List.from(job.benefits ?? []);
       _hasAnalyzed = true;
       
       if (_sourceOptions.contains(job.source)) {
@@ -93,34 +96,62 @@ class _AddJobModalState extends ConsumerState<AddJobModal> {
     });
 
     try {
-      final uri = Uri.parse(url);
-      final host = uri.host.toLowerCase();
+      final service = JobParsingService();
+      final data = await service.parseJobUrl(url);
       
-      if (host.contains('linkedin')) {
-        _selectedSource = 'LinkedIn';
-      } else if (host.contains('indeed')) {
-        _selectedSource = 'Indeed';
-      } else if (host.contains('bayt')) {
-        _selectedSource = 'Bayt';
-      } else {
-        _selectedSource = 'Career Page';
+      if (mounted) {
+        setState(() {
+          // Populate fields if they are empty or we have better data
+          if (_companyController.text.isEmpty && data.company != null) {
+            _companyController.text = data.company!;
+          }
+          if (_roleController.text.isEmpty && data.role != null) {
+            _roleController.text = data.role!;
+          }
+          if (_countryController.text.isEmpty && data.country != null) {
+            _countryController.text = data.country!;
+          }
+          if (_descController.text.isEmpty && data.description != null) {
+            _descController.text = data.description!;
+          }
+          
+          if (data.source != null) {
+            if (_sourceOptions.contains(data.source)) {
+              _selectedSource = data.source;
+            } else {
+              _selectedSource = 'Other';
+            }
+          }
+          
+          if (data.responsibilities.isNotEmpty) {
+            _responsibilities = List.from(data.responsibilities);
+          }
+          
+          if (data.qualifications.isNotEmpty) {
+            _qualifications = List.from(data.qualifications);
+          }
+          
+          if (data.benefits.isNotEmpty) {
+            _benefits = List.from(data.benefits);
+          }
+          
+          if (data.keywords.isNotEmpty) {
+            _keywords = List.from(data.keywords);
+          }
+          
+          _hasAnalyzed = true;
+        });
       }
-      
-      if (uri.path.contains('/ae/') || host.endsWith('.ae')) {
-        _countryController.text = 'AE';
-      } else if (uri.path.contains('/us/') || host.endsWith('.com')) {
-        _countryController.text = 'US';
-      } else if (uri.path.contains('/uk/') || host.endsWith('.co.uk')) {
-        _countryController.text = 'UK';
-      } else if (uri.path.contains('/sa/') || host.endsWith('.sa')) {
-        _countryController.text = 'SA';
-      }
-      
-      _hasAnalyzed = true;
     } catch (e) {
-      _error = 'Failed to analyze link';
+      if (mounted) {
+        setState(() {
+          _error = 'Failed to analyze link: $e';
+        });
+      }
     } finally {
-      setState(() => _isAnalyzing = false);
+      if (mounted) {
+        setState(() => _isAnalyzing = false);
+      }
     }
   }
 
@@ -285,6 +316,15 @@ class _AddJobModalState extends ConsumerState<AddJobModal> {
                         _qualifications = val.split('\n').map((e) => e.trim()).where((e) => e.isNotEmpty).toList();
                       },
                     ),
+                    const SizedBox(height: 16),
+                    TextFormField(
+                      initialValue: _benefits.join('\n'),
+                      decoration: const InputDecoration(labelText: 'Benefits (one per line)'),
+                      maxLines: 4,
+                      onChanged: (val) {
+                        _benefits = val.split('\n').map((e) => e.trim()).where((e) => e.isNotEmpty).toList();
+                      },
+                    ),
                   ],
                 ),
               ),
@@ -333,6 +373,7 @@ class _AddJobModalState extends ConsumerState<AddJobModal> {
         keywords: _keywords,
         responsibilities: _responsibilities,
         qualifications: _qualifications,
+        benefits: _benefits,
         cvBytes: _cvBytes,
         cvFileName: _cvFileName,
         existingCvUrl: widget.jobToEdit!.cvUrl,
@@ -351,6 +392,7 @@ class _AddJobModalState extends ConsumerState<AddJobModal> {
         keywords: _keywords,
         responsibilities: _responsibilities,
         qualifications: _qualifications,
+        benefits: _benefits,
         cvBytes: _cvBytes,
         cvFileName: _cvFileName,
       );

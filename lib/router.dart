@@ -12,6 +12,7 @@ import 'features/profile/profile_screen.dart';
 import 'features/settings/settings_screen.dart';
 import 'features/notifications/notifications_screen.dart';
 import 'features/upcoming/upcoming_features_screen.dart';
+import 'features/subscription/subscription_screen.dart';
 
 final routerProvider = Provider<GoRouter>((ref) {
   final authState = ValueNotifier<AsyncValue<User?>>(const AsyncValue.loading());
@@ -63,6 +64,10 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/job/:id',
         builder: (context, state) => JobDetailScreen(jobId: state.pathParameters['id']!),
+      ),
+      GoRoute(
+        path: '/subscription',
+        builder: (context, state) => const SubscriptionScreen(),
       ),
     ],
     redirect: (context, state) {

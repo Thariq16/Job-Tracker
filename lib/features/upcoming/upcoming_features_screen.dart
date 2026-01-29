@@ -107,6 +107,34 @@ class UpcomingFeaturesScreen extends StatelessWidget {
         status: FeatureStatus.planned,
         category: 'Productivity',
       ),
+      _FeatureItem(
+        icon: Icons.extension,
+        title: 'Chrome Extension',
+        description: 'One-click job saving from any job board',
+        status: FeatureStatus.planned,
+        category: 'Productivity',
+      ),
+      _FeatureItem(
+        icon: Icons.edit_document,
+        title: 'Resume Builder',
+        description: 'AI-powered resume builder with job-specific tailoring',
+        status: FeatureStatus.planned,
+        category: 'AI Tools',
+      ),
+      _FeatureItem(
+        icon: Icons.bar_chart,
+        title: 'Analytics Dashboard',
+        description: 'Visual insights on application patterns and response rates',
+        status: FeatureStatus.planned,
+        category: 'Insights',
+      ),
+      _FeatureItem(
+        icon: Icons.verified,
+        title: 'ATS Score Integration',
+        description: 'Check how well your resume matches job requirements',
+        status: FeatureStatus.planned,
+        category: 'AI Tools',
+      ),
     ];
 
     return Scaffold(

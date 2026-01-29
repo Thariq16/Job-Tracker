@@ -1,3 +1,8 @@
+import 'package:http/http.dart' as http;
+import 'package:html/parser.dart' as html_parser;
+import 'package:html/dom.dart' as dom;
+import 'package:flutter/foundation.dart' show kIsWeb;
+
 /// Data extracted from a job URL
 class ParsedJobData {
   final String? company;
@@ -11,6 +16,7 @@ class ParsedJobData {
   final List<String> keywords;
   final List<String> responsibilities;
   final List<String> qualifications;
+  final List<String> benefits;
 
   ParsedJobData({
     this.company,
@@ -24,7 +30,38 @@ class ParsedJobData {
     this.keywords = const [],
     this.responsibilities = const [],
     this.qualifications = const [],
+    this.benefits = const [],
   });
+  
+  ParsedJobData copyWith({
+    String? company,
+    String? role,
+    String? description,
+    String? source,
+    String? sourceJobId,
+    String? originalUrl,
+    String? country,
+    String? workMode,
+    List<String>? keywords,
+    List<String>? responsibilities,
+    List<String>? qualifications,
+    List<String>? benefits,
+  }) {
+    return ParsedJobData(
+      company: company ?? this.company,
+      role: role ?? this.role,
+      description: description ?? this.description,
+      source: source ?? this.source,
+      sourceJobId: sourceJobId ?? this.sourceJobId,
+      originalUrl: originalUrl ?? this.originalUrl,
+      country: country ?? this.country,
+      workMode: workMode ?? this.workMode,
+      keywords: keywords ?? this.keywords,
+      responsibilities: responsibilities ?? this.responsibilities,
+      qualifications: qualifications ?? this.qualifications,
+      benefits: benefits ?? this.benefits,
+    );
+  }
 
   /// Check if this is from a recognized job board
   bool get isFromJobBoard => source != null && source != 'Career Page';
@@ -41,6 +78,7 @@ class JobParsingService {
     String? sourceJobId;
     String? country;
     
+    // Initial basic parsing
     try {
       final uri = Uri.parse(url.trim());
       final host = uri.host.toLowerCase();
@@ -74,6 +112,8 @@ class JobParsingService {
         source = 'Greenhouse';
       } else if (host.contains('workday')) {
         source = 'Workday';
+      } else if (host.contains('rippling')) {
+        source = 'Rippling';
       } else if (host.contains('jobs.') || host.contains('careers.') || path.contains('/careers') || path.contains('/jobs')) {
         source = 'Career Page';
       } else {
@@ -86,13 +126,260 @@ class JobParsingService {
     } catch (_) {
       // URL parsing failed - return minimal data
     }
-
-    return ParsedJobData(
+    
+    final initialData = ParsedJobData(
       source: source,
       sourceJobId: sourceJobId,
       originalUrl: url.trim(),
       country: country,
     );
+    
+    // Try to fetch specific content for supported sources
+    if (source == 'Rippling' || source == 'Career Page' || source == 'Other') {
+       try {
+         final content = await _fetchJobPage(url);
+         if (content != null) {
+           return _parseJobContent(content, initialData);
+         }
+       } catch (e) {
+         print('Failed to fetch job content: $e');
+       }
+    }
+
+    return initialData;
+  }
+  
+  Future<String?> _fetchJobPage(String url) async {
+    try {
+      var targetUrl = url;
+      // Use CORS proxy for Web to avoid blocking
+      if (kIsWeb) {
+        targetUrl = 'https://corsproxy.io/?' + Uri.encodeComponent(url);
+      }
+      
+      final response = await http.get(Uri.parse(targetUrl), headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+      });
+      
+      if (response.statusCode == 200) {
+        return response.body;
+      } else {
+        print('Failed to fetch job page: ${response.statusCode} for $targetUrl');
+      }
+    } catch (e) {
+      print('Network error fetching job page: $e');
+    }
+    return null;
+  }
+  
+  ParsedJobData _parseJobContent(String htmlContent, ParsedJobData baseData) {
+    final document = html_parser.parse(htmlContent);
+    
+    String? title = baseData.role;
+    String? company = baseData.company;
+    String? description = baseData.description;
+    List<String> responsibilities = List.from(baseData.responsibilities);
+    List<String> qualifications = List.from(baseData.qualifications);
+    List<String> benefits = List.from(baseData.benefits);
+    List<String> keywords = List.from(baseData.keywords);
+    
+    // 1. Title Heuristics
+    if (title == null) {
+      final h1 = document.querySelector('h1')?.text.trim();
+      final ogTitle = document.querySelector('meta[property="og:title"]')?.attributes['content'];
+      title = h1 ?? ogTitle;
+    }
+    
+    // 2. Company Heuristics
+    if (company == null) {
+       company = document.querySelector('meta[property="og:site_name"]')?.attributes['content'];
+    }
+    
+    // 3. Section Keywords for parsing
+    final sectionKeywords = {
+      'responsibilities': [
+        'responsibilities', 
+        'key responsibilities', 
+        'what you\'ll do', 
+        'what you will do', 
+        'duties',
+        'your role',
+        'job duties',
+      ],
+      'qualifications': [
+        'qualifications', 
+        'requirements', 
+        'what we\'re looking for',
+        'who you are', 
+        'what we look for', 
+        'required skills',
+        'must have',
+        'experience required',
+      ],
+      'benefits': [
+        'benefits',
+        'what we offer',
+        'perks',
+        'why join us',
+        'compensation',
+        'what you\'ll get',
+      ],
+      'description': [
+        'about the role',
+        'job description',
+        'overview',
+        'about this job',
+        'position summary',
+      ],
+    };
+
+    // 4. Find job description container first (usually largest text block)
+    String? fullDescription;
+    final descContainer = document.querySelectorAll('[class*="description"], [class*="job-details"], [class*="content"], main, article')
+      .fold<dom.Element?>(null, (best, current) {
+         if (best == null) return current;
+         return (current.text.length > best.text.length) ? current : best;
+      });
+    
+    if (descContainer != null) {
+      fullDescription = descContainer.text.trim();
+    }
+
+    // 5. Iterate over all potential section headers
+    for (final element in document.querySelectorAll('h2, h3, h4, h5, strong, b, p')) {
+      final text = element.text.toLowerCase().trim();
+      
+      // Skip very long text (not headers)
+      if (text.length > 100) continue;
+      
+      // Check for Responsibilities
+      if (responsibilities.isEmpty && _matchesAny(text, sectionKeywords['responsibilities']!)) {
+        final list = _findFollowingList(element);
+        if (list.isNotEmpty) responsibilities = list;
+      }
+      
+      // Check for Qualifications
+      if (qualifications.isEmpty && _matchesAny(text, sectionKeywords['qualifications']!)) {
+        final list = _findFollowingList(element);
+        if (list.isNotEmpty) qualifications = list;
+      }
+      
+      // Check for Benefits
+      if (benefits.isEmpty && _matchesAny(text, sectionKeywords['benefits']!)) {
+        final list = _findFollowingList(element);
+        if (list.isNotEmpty) benefits = list;
+      }
+      
+      // Check for Description section
+      if (description == null && _matchesAny(text, sectionKeywords['description']!)) {
+        final descText = _findFollowingText(element);
+        if (descText.isNotEmpty) description = descText;
+      }
+    }
+    
+    // 6. Fallback for description: use og:description or full text
+    if (description == null) {
+      description = document.querySelector('meta[property="og:description"]')?.attributes['content'];
+    }
+    if (description == null && fullDescription != null) {
+      // Truncate to a reasonable size
+      description = fullDescription.length > 2000 
+          ? fullDescription.substring(0, 2000) + '...'
+          : fullDescription;
+    }
+
+    // 7. Extract Keywords from description using common tech/skill terms
+    if (keywords.isEmpty && fullDescription != null) {
+      keywords = _extractKeywords(fullDescription);
+    }
+    
+    return baseData.copyWith(
+      role: title,
+      company: company,
+      description: description,
+      responsibilities: responsibilities,
+      qualifications: qualifications,
+      benefits: benefits,
+      keywords: keywords,
+    );
+  }
+  
+  String _findFollowingText(dom.Element header) {
+    // Look for next paragraph or text element
+    var sibling = header.nextElementSibling;
+    while (sibling != null) {
+      if (sibling.localName == 'p' || sibling.localName == 'div') {
+        final text = sibling.text.trim();
+        if (text.length > 50) return text;
+      }
+      if (['h1', 'h2', 'h3', 'h4'].contains(sibling.localName)) break;
+      sibling = sibling.nextElementSibling;
+    }
+    return '';
+  }
+  
+  List<String> _extractKeywords(String text) {
+    // Common tech/business keywords to look for
+    final commonKeywords = [
+      'python', 'java', 'javascript', 'typescript', 'sql', 'react', 'angular', 'vue',
+      'node', 'flutter', 'dart', 'swift', 'kotlin', 'go', 'rust', 'c++', 'c#',
+      'aws', 'azure', 'gcp', 'docker', 'kubernetes', 'ci/cd', 'devops', 'agile', 'scrum',
+      'machine learning', 'ai', 'data science', 'analytics', 'tableau', 'power bi',
+      'product management', 'project management', 'stakeholder', 'strategy',
+      'leadership', 'communication', 'collaboration', 'problem-solving',
+      'saas', 'b2b', 'b2c', 'crm', 'erp', 'api', 'rest', 'graphql',
+      'figma', 'sketch', 'ux', 'ui', 'design', 'research',
+      'excel', 'powerpoint', 'jira', 'confluence', 'slack', 'notion',
+      'fintech', 'healthtech', 'edtech', 'startup', 'enterprise',
+    ];
+    
+    final lowerText = text.toLowerCase();
+    final foundKeywords = <String>[];
+    
+    for (final keyword in commonKeywords) {
+      if (lowerText.contains(keyword) && !foundKeywords.contains(keyword)) {
+        foundKeywords.add(keyword);
+      }
+    }
+    
+    // Limit to top 10 keywords
+    return foundKeywords.take(10).toList();
+  }
+  
+  bool _matchesAny(String text, List<String> keywords) {
+    for (final k in keywords) {
+      if (text.contains(k)) return true;
+    }
+    return false;
+  }
+  
+  List<String> _findFollowingList(dom.Element header) {
+    // Look at siblings
+    var sibling = header.nextElementSibling;
+    while (sibling != null) {
+      if (sibling.localName == 'ul' || sibling.localName == 'ol') {
+        return sibling.children.map((li) => li.text.trim()).where((s) => s.isNotEmpty).toList();
+      }
+      // Stop if we hit another header
+      if (['h1', 'h2', 'h3', 'h4'].contains(sibling.localName)) {
+        break;
+      }
+      sibling = sibling.nextElementSibling;
+    }
+    
+    // Look at parent's siblings if header is wrapped
+    if (header.parent != null) {
+        var parentSibling = header.parent!.nextElementSibling;
+        while (parentSibling != null) {
+             if (parentSibling.localName == 'ul' || parentSibling.localName == 'ol') {
+                return parentSibling.children.map((li) => li.text.trim()).where((s) => s.isNotEmpty).toList();
+             }
+             if (['h1', 'h2', 'h3', 'h4'].contains(parentSibling.localName)) break;
+             parentSibling = parentSibling.nextElementSibling;
+        }
+    }
+    
+    return [];
   }
 
   /// Extract job ID from LinkedIn URL
@@ -152,10 +439,16 @@ class JobParsingService {
     
     for (final entry in countryPatterns.entries) {
       for (final pattern in entry.value) {
+        // Prepare patterns for path matching to avoid partial words (e.g. 'in' in 'login')
+        final pathStr = '/${path.replaceAll(RegExp(r'^/|/$'), '')}/'; // Ensure wrapped in slashes
+        
         if (host.contains('.$pattern') || 
             host.endsWith('.$pattern') ||
-            path.contains('/$pattern/') ||
-            path.startsWith('/$pattern/')) {
+            host.startsWith('$pattern.') || 
+            pathStr.contains('/$pattern/') ||
+            pathStr.contains('-$pattern/') ||
+            pathStr.contains('/$pattern-') ||
+            pathStr.contains('-$pattern-')) {
           return entry.key.toUpperCase();
         }
       }

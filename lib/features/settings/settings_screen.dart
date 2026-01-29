@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:job_tracker/core/theme_provider.dart';
 
 class SettingsScreen extends ConsumerWidget {
@@ -18,6 +19,18 @@ class SettingsScreen extends ConsumerWidget {
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
+          _buildSection('Subscription', [
+            _buildSettingTile(
+              context,
+              icon: Icons.workspace_premium,
+              title: 'Manage Subscription',
+              subtitle: 'Free Plan • Upgrade for more features',
+              onTap: () => context.go('/subscription'),
+            ),
+          ], isDark),
+
+          const SizedBox(height: 16),
+
           _buildSection('Appearance', [
             _buildSettingTile(
               context,
