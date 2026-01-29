@@ -114,6 +114,11 @@ class JobParsingService {
         source = 'Workday';
       } else if (host.contains('rippling')) {
         source = 'Rippling';
+      } else if (host.contains('zohorecruit')) {
+        source = 'Zoho Recruit';
+        // Extract job ID from URL path (e.g., /jobs/Careers/838790000000542408/...)
+        final zohoMatch = RegExp(r'/jobs/[^/]+/(\d+)/').firstMatch(uri.path);
+        sourceJobId = zohoMatch?.group(1);
       } else if (host.contains('jobs.') || host.contains('careers.') || path.contains('/careers') || path.contains('/jobs')) {
         source = 'Career Page';
       } else {
@@ -135,7 +140,7 @@ class JobParsingService {
     );
     
     // Try to fetch specific content for supported sources
-    if (source == 'Rippling' || source == 'Career Page' || source == 'Other') {
+    if (source == 'Zoho Recruit' || source == 'Rippling' || source == 'Career Page' || source == 'Other') {
        try {
          final content = await _fetchJobPage(url);
          if (content != null) {
