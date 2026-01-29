@@ -1,11 +1,11 @@
 {
-    "name": "job_tracker",
-    "short_name": "job_tracker",
+    "name": "Applyd",
+    "short_name": "Applyd",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",
     "theme_color": "#0175C2",
-    "description": "A new Flutter project.",
+    "description": "Track your job applications effortlessly. Organize, manage, and never lose track of where you applied.",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [

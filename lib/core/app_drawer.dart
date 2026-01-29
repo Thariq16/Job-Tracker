@@ -101,7 +101,7 @@ class AppDrawer extends ConsumerWidget {
                   context,
                   icon: Icons.view_kanban_outlined,
                   selectedIcon: Icons.view_kanban,
-                  label: 'Job Tracker',
+                  label: 'Applyd',
                   isSelected: selectedIndex == 1,
                   onTap: () {
                     Navigator.pop(context);

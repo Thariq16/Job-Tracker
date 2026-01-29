@@ -20,7 +20,7 @@ class JobTrackerScreen extends ConsumerWidget {
           ),
         ),
         title: Text(
-          'Job Tracker',
+          'Applyd',
           style: GoogleFonts.outfit(
             fontWeight: FontWeight.bold,
             fontSize: 24,
