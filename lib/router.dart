@@ -13,6 +13,7 @@ import 'features/settings/settings_screen.dart';
 import 'features/notifications/notifications_screen.dart';
 import 'features/upcoming/upcoming_features_screen.dart';
 import 'features/subscription/subscription_screen.dart';
+import 'features/linkedin_setup/linkedin_setup_screen.dart';
 
 final routerProvider = Provider<GoRouter>((ref) {
   final authState = ValueNotifier<AsyncValue<User?>>(const AsyncValue.loading());
@@ -68,6 +69,10 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/subscription',
         builder: (context, state) => const SubscriptionScreen(),
+      ),
+      GoRoute(
+        path: '/linkedin-setup',
+        builder: (context, state) => const LinkedInSetupScreen(),
       ),
     ],
     redirect: (context, state) {
