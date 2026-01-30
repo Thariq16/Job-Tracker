@@ -119,6 +119,11 @@ class JobParsingService {
         // Extract job ID from URL path (e.g., /jobs/Careers/838790000000542408/...)
         final zohoMatch = RegExp(r'/jobs/[^/]+/(\d+)/').firstMatch(uri.path);
         sourceJobId = zohoMatch?.group(1);
+      } else if (host.contains('workable.com') || host.contains('workable')) {
+        source = 'Workable';
+        // Extract job ID from URL path (e.g., /company/j/E535316205)
+        final workableMatch = RegExp(r'/j/([A-Z0-9]+)').firstMatch(uri.path);
+        sourceJobId = workableMatch?.group(1);
       } else if (host.contains('jobs.') || host.contains('careers.') || path.contains('/careers') || path.contains('/jobs')) {
         source = 'Career Page';
       } else {
@@ -140,7 +145,8 @@ class JobParsingService {
     );
     
     // Try to fetch specific content for supported sources
-    if (source == 'Zoho Recruit' || source == 'Rippling' || source == 'Career Page' || source == 'Other') {
+    // Note: Workable, Zoho use JS rendering but we can still get meta tags
+    if (source == 'Zoho Recruit' || source == 'Rippling' || source == 'Workable' || source == 'Career Page' || source == 'Other') {
        try {
          final content = await _fetchJobPage(url);
          if (content != null) {
@@ -222,7 +228,7 @@ class JobParsingService {
     print('Source: ${baseData.source}');
     print('HTML length: ${htmlContent.length}');
     
-    // 1. Title Heuristics
+    // 1. Title Heuristics - prioritize meta tags for JS-heavy sites
     if (title == null) {
       final h1 = document.querySelector('h1')?.text.trim();
       final ogTitle = document.querySelector('meta[property="og:title"]')?.attributes['content'];
@@ -232,28 +238,47 @@ class JobParsingService {
       print('og:title: $ogTitle');
       print('title tag: $titleTag');
       
-      // Try h1 first, then og:title, then title tag
-      String? rawTitle = h1;
-      if (rawTitle == null || rawTitle.isEmpty) {
-        rawTitle = ogTitle ?? titleTag;
+      // For JS-rendered sites (Workable, Zoho), prefer og:title or title tag
+      // since h1 might just be loader content
+      String? rawTitle;
+      final isJsRenderedSite = baseData.source == 'Workable' || baseData.source == 'Zoho Recruit';
+      
+      if (isJsRenderedSite) {
+        // Prefer meta tags for JS-heavy sites
+        rawTitle = ogTitle ?? titleTag ?? h1;
+      } else {
+        // Try h1 first for traditional sites
+        rawTitle = (h1 != null && h1.isNotEmpty) ? h1 : (ogTitle ?? titleTag);
       }
       
-      // Parse title - handle formats like "Company - Role - Type" or "Role | Company"
+      // Parse title - handle formats like "Role - Company" or "Role | Company"
       if (rawTitle != null && rawTitle.isNotEmpty) {
+        // Workable format: "Marketing Intern - AlGooru"
         // Zoho Recruit format: "500 Global - Eurasia Marketing Coordinator - Remote Job"
         if (rawTitle.contains(' - ')) {
           final parts = rawTitle.split(' - ');
           if (parts.length >= 2) {
-            // Second part is usually the role
-            title = parts[1].trim();
-            // First part is company if not already set
-            if (company == null && parts[0].isNotEmpty) {
-              company = parts[0].trim();
+            // Workable: Role - Company (first part is role, last is company)
+            // Zoho: Company - Role - Type (first is company, second is role)
+            if (baseData.source == 'Workable') {
+              title = parts[0].trim(); // First part is role
+              if (company == null && parts.length > 1) {
+                company = parts.last.trim(); // Last part is company
+              }
+            } else {
+              // Zoho format: Company - Role - Type
+              title = parts[1].trim(); // Second part is role
+              if (company == null && parts[0].isNotEmpty) {
+                company = parts[0].trim();
+              }
             }
           }
         } else if (rawTitle.contains(' | ')) {
           final parts = rawTitle.split(' | ');
           title = parts[0].trim();
+          if (company == null && parts.length > 1) {
+            company = parts.last.trim();
+          }
         } else {
           title = rawTitle;
         }
@@ -268,7 +293,16 @@ class JobParsingService {
        print('og:site_name: $company');
     }
     
-    // 2b. Look for "Company: xyz" pattern in page text
+    // 2b. For Workable, try to extract company from subdomain meta tag
+    if (company == null && baseData.source == 'Workable') {
+      final subdomain = document.querySelector('meta[name="subdomain"]')?.attributes['content'];
+      if (subdomain != null && subdomain.isNotEmpty) {
+        // Capitalize the subdomain as company name
+        company = subdomain[0].toUpperCase() + subdomain.substring(1);
+      }
+    }
+    
+    // 2c. Look for "Company: xyz" pattern in page text
     if (company == null) {
       final pageText = document.body?.text ?? '';
       final companyMatch = RegExp(r'Company[:\s]+([A-Za-z0-9\s&]+?)(?:\n|Location|Date|Job)', caseSensitive: false).firstMatch(pageText);
