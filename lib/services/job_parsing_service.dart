@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:html/parser.dart' as html_parser;
 import 'package:html/dom.dart' as dom;
@@ -144,8 +145,24 @@ class JobParsingService {
       country: country,
     );
     
+    // Try Workable public API first (returns structured JSON data)
+    if (source == 'Workable' && sourceJobId != null) {
+      try {
+        final workableData = await _fetchWorkableJobData(url, sourceJobId);
+        if (workableData != null) {
+          return workableData.copyWith(
+            source: source,
+            sourceJobId: sourceJobId,
+            originalUrl: url.trim(),
+          );
+        }
+      } catch (e) {
+        print('Failed to fetch Workable API: $e');
+      }
+    }
+    
     // Try to fetch specific content for supported sources
-    // Note: Workable, Zoho use JS rendering but we can still get meta tags
+    // Note: Zoho uses JS rendering but we can still get meta tags
     if (source == 'Zoho Recruit' || source == 'Rippling' || source == 'Workable' || source == 'Career Page' || source == 'Other') {
        try {
          final content = await _fetchJobPage(url);
@@ -158,6 +175,136 @@ class JobParsingService {
     }
 
     return initialData;
+  }
+  
+  /// Fetch job data from Workable's public API
+  /// API endpoint: https://www.workable.com/api/accounts/{subdomain}
+  Future<ParsedJobData?> _fetchWorkableJobData(String url, String jobId) async {
+    try {
+      // Extract subdomain from URL (e.g., "algooru" from apply.workable.com/algooru/j/...)
+      final uri = Uri.parse(url.trim());
+      final pathSegments = uri.pathSegments;
+      if (pathSegments.isEmpty) return null;
+      
+      final subdomain = pathSegments[0]; // First path segment is the company subdomain
+      final apiUrl = 'https://www.workable.com/api/accounts/$subdomain';
+      
+      print('=== WORKABLE API DEBUG ===');
+      print('Subdomain: $subdomain');
+      print('API URL: $apiUrl');
+      print('Looking for job ID: $jobId');
+      
+      final response = await http.get(
+        Uri.parse(apiUrl),
+        headers: {
+          'Accept': 'application/json',
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+        },
+      ).timeout(const Duration(seconds: 15));
+      
+      if (response.statusCode != 200) {
+        print('Workable API failed with status: ${response.statusCode}');
+        return null;
+      }
+      
+      final data = json.decode(response.body) as Map<String, dynamic>;
+      final companyName = data['name'] as String?;
+      final companyDesc = data['description'] as String?;
+      final jobs = data['jobs'] as List<dynamic>?;
+      
+      if (jobs == null) return null;
+      
+      // Find the matching job by shortcode
+      Map<String, dynamic>? matchingJob;
+      for (final job in jobs) {
+        if (job['shortcode'] == jobId) {
+          matchingJob = job as Map<String, dynamic>;
+          break;
+        }
+      }
+      
+      if (matchingJob == null) {
+        print('Job $jobId not found in API response');
+        return null;
+      }
+      
+      print('Found matching job: ${matchingJob['title']}');
+      
+      // Build description from available fields
+      final descParts = <String>[];
+      if (companyDesc != null && companyDesc.isNotEmpty) {
+        // Strip HTML tags from company description
+        final cleanDesc = companyDesc.replaceAll(RegExp(r'<[^>]*>'), '');
+        descParts.add(cleanDesc);
+      }
+      if (matchingJob['department'] != null) {
+        descParts.add('Department: ${matchingJob['department']}');
+      }
+      if (matchingJob['employment_type'] != null) {
+        descParts.add('Employment Type: ${matchingJob['employment_type']}');
+      }
+      if (matchingJob['experience'] != null) {
+        descParts.add('Experience Level: ${matchingJob['experience']}');
+      }
+      if (matchingJob['industry'] != null) {
+        descParts.add('Industry: ${matchingJob['industry']}');
+      }
+      
+      // Determine work mode
+      String? workMode;
+      if (matchingJob['telecommuting'] == true) {
+        workMode = 'Remote';
+      } else {
+        workMode = 'On-site';
+      }
+      
+      // Build location string
+      String? jobCountry = matchingJob['country'] as String?;
+      final city = matchingJob['city'] as String?;
+      if (city != null && jobCountry != null) {
+        descParts.add('Location: $city, $jobCountry');
+      }
+      
+      return ParsedJobData(
+        company: companyName,
+        role: matchingJob['title'] as String?,
+        description: descParts.join('\n\n'),
+        country: jobCountry,
+        workMode: workMode,
+        keywords: _extractKeywordsFromWorkable(matchingJob),
+      );
+    } catch (e) {
+      print('Error fetching Workable API: $e');
+      return null;
+    }
+  }
+  
+  /// Extract keywords from Workable job data
+  List<String> _extractKeywordsFromWorkable(Map<String, dynamic> job) {
+    final keywords = <String>[];
+    
+    // Add employment type as keyword
+    if (job['employment_type'] != null) {
+      keywords.add(job['employment_type'].toString().toLowerCase());
+    }
+    
+    // Add experience level
+    if (job['experience'] != null) {
+      keywords.add(job['experience'].toString().toLowerCase());
+    }
+    
+    // Add industry
+    if (job['industry'] != null) {
+      keywords.add(job['industry'].toString().toLowerCase());
+    }
+    
+    // Add department (clean emoji)
+    if (job['department'] != null) {
+      final dept = job['department'].toString().replaceAll(RegExp(r'[^\w\s]'), '').trim().toLowerCase();
+      if (dept.isNotEmpty) keywords.add(dept);
+    }
+    
+    return keywords;
   }
   
   Future<String?> _fetchJobPage(String url) async {
