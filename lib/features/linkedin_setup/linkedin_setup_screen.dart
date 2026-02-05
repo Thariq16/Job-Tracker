@@ -444,29 +444,36 @@ class _LinkedInSetupScreenState extends ConsumerState<LinkedInSetupScreen>
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         child: Row(
           children: [
-            // Checkbox
-            GestureDetector(
-              onTap: () {
-                ref.read(linkedInSetupControllerProvider.notifier)
-                    .toggleTask(task.id, !isCompleted);
-              },
-              child: AnimatedContainer(
-                duration: const Duration(milliseconds: 200),
-                width: 24,
-                height: 24,
-                decoration: BoxDecoration(
-                  color: isCompleted ? const Color(0xFF0077B5) : Colors.transparent,
-                  borderRadius: BorderRadius.circular(6),
-                  border: Border.all(
-                    color: isCompleted 
-                        ? const Color(0xFF0077B5) 
-                        : (isDark ? Colors.grey[600]! : Colors.grey[400]!),
-                    width: 2,
+            // Checkbox - Using Material + InkWell for proper tap isolation
+            Material(
+              color: Colors.transparent,
+              child: InkWell(
+                onTap: () {
+                  ref.read(linkedInSetupControllerProvider.notifier)
+                      .toggleTask(task.id, !isCompleted);
+                },
+                borderRadius: BorderRadius.circular(6),
+                child: Padding(
+                  padding: const EdgeInsets.all(4), // Larger touch target
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 200),
+                    width: 24,
+                    height: 24,
+                    decoration: BoxDecoration(
+                      color: isCompleted ? const Color(0xFF0077B5) : Colors.transparent,
+                      borderRadius: BorderRadius.circular(6),
+                      border: Border.all(
+                        color: isCompleted 
+                            ? const Color(0xFF0077B5) 
+                            : (isDark ? Colors.grey[600]! : Colors.grey[400]!),
+                        width: 2,
+                      ),
+                    ),
+                    child: isCompleted
+                        ? const Icon(Icons.check, size: 16, color: Colors.white)
+                        : null,
                   ),
                 ),
-                child: isCompleted
-                    ? const Icon(Icons.check, size: 16, color: Colors.white)
-                    : null,
               ),
             ),
             const SizedBox(width: 14),

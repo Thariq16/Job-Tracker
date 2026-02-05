@@ -272,7 +272,22 @@ class _KanbanColumn extends ConsumerWidget {
                         country: job.country,
                         workMode: job.workMode,
                         onTap: () => context.push('/job/${job.id}'),
-                        // onStatusChanged: Removed or kept? Can keep for quick access
+                        onStatusChanged: (newStatus) {
+                          final oldStatus = job.status;
+                          ref.read(jobsControllerProvider.notifier).updateStatus(job.id, newStatus);
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text('Moved to ${newStatus.replaceAll('_', ' ').toUpperCase()}'),
+                              action: SnackBarAction(
+                                label: 'Undo',
+                                onPressed: () {
+                                  ref.read(jobsControllerProvider.notifier).updateStatus(job.id, oldStatus);
+                                },
+                              ),
+                              duration: const Duration(seconds: 4),
+                            ),
+                          );
+                        },
                       ),
                     );
                   },
