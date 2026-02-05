@@ -3,6 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:job_tracker/core/theme_provider.dart';
+import 'feature_request_dialog.dart';
 
 class SettingsScreen extends ConsumerWidget {
   const SettingsScreen({super.key});
@@ -79,6 +80,25 @@ class SettingsScreen extends ConsumerWidget {
               title: 'Clear All Data',
               subtitle: 'Remove all applications',
               isDestructive: true,
+              onTap: () {},
+            ),
+          ], isDark),
+
+          const SizedBox(height: 16),
+
+          _buildSection('Feedback', [
+            _buildSettingTile(
+              context,
+              icon: Icons.lightbulb_outline,
+              title: 'Request New Feature',
+              subtitle: 'Share your ideas with us',
+              onTap: () => showFeatureRequestDialog(context),
+            ),
+            _buildSettingTile(
+              context,
+              icon: Icons.bug_report_outlined,
+              title: 'Report a Bug',
+              subtitle: 'Help us improve the app',
               onTap: () {},
             ),
           ], isDark),

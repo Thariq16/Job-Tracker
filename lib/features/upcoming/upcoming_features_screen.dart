@@ -9,6 +9,37 @@ class UpcomingFeaturesScreen extends StatelessWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     final features = [
+      // Completed Features
+      _FeatureItem(
+        icon: Icons.checklist,
+        title: 'LinkedIn Setup Guide',
+        description: 'Step-by-step checklist to optimize your LinkedIn profile',
+        status: FeatureStatus.completed,
+        category: 'Guides',
+      ),
+      _FeatureItem(
+        icon: Icons.trending_up,
+        title: 'Daily LinkedIn Engagement',
+        description: 'Track and complete daily LinkedIn networking tasks',
+        status: FeatureStatus.completed,
+        category: 'Networking',
+      ),
+      _FeatureItem(
+        icon: Icons.business,
+        title: 'Target Companies',
+        description: 'Track and manage your list of target companies',
+        status: FeatureStatus.completed,
+        category: 'Networking',
+      ),
+      _FeatureItem(
+        icon: Icons.lightbulb,
+        title: 'Feature Requests',
+        description: 'Submit ideas for new features you\'d like to see',
+        status: FeatureStatus.completed,
+        category: 'Feedback',
+      ),
+      
+      // In Progress
       _FeatureItem(
         icon: Icons.link,
         title: 'LinkedIn Integration',
@@ -17,19 +48,21 @@ class UpcomingFeaturesScreen extends StatelessWidget {
         category: 'Networking',
       ),
       _FeatureItem(
-        icon: Icons.trending_up,
-        title: 'Daily LinkedIn Activity',
-        description: 'Track and optimize your daily LinkedIn engagement',
-        status: FeatureStatus.planned,
-        category: 'Networking',
+        icon: Icons.star_rate,
+        title: 'Net Promoter Score',
+        description: 'Share your feedback to help us improve',
+        status: FeatureStatus.inProgress,
+        category: 'Feedback',
       ),
       _FeatureItem(
-        icon: Icons.help_outline,
-        title: 'LinkedIn Setup Guide',
-        description: 'Step-by-step guide to optimize your LinkedIn profile',
-        status: FeatureStatus.planned,
-        category: 'Guides',
+        icon: Icons.person_add,
+        title: 'Invite a Friend',
+        description: 'Share the app with friends and earn rewards',
+        status: FeatureStatus.inProgress,
+        category: 'Growth',
       ),
+      
+      // Planned Features
       _FeatureItem(
         icon: Icons.rate_review,
         title: 'CV Reviewer',
@@ -165,7 +198,7 @@ class UpcomingFeaturesScreen extends StatelessWidget {
                     const Icon(Icons.rocket_launch, color: Colors.white, size: 28),
                     const SizedBox(width: 12),
                     Text(
-                      'Coming Soon',
+                      'Feature Roadmap',
                       style: GoogleFonts.outfit(
                         fontSize: 24,
                         fontWeight: FontWeight.bold,
@@ -176,7 +209,7 @@ class UpcomingFeaturesScreen extends StatelessWidget {
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  'We\'re building powerful features to supercharge your job search. Here\'s what\'s on our roadmap.',
+                  'Track our progress on new features. Completed features are ready to use!',
                   style: GoogleFonts.inter(
                     fontSize: 14,
                     color: Colors.white.withValues(alpha: 0.9),
@@ -191,6 +224,8 @@ class UpcomingFeaturesScreen extends StatelessWidget {
           // Legend
           Row(
             children: [
+              _buildStatusLegend('Completed', FeatureStatus.completed, isDark),
+              const SizedBox(width: 16),
               _buildStatusLegend('In Progress', FeatureStatus.inProgress, isDark),
               const SizedBox(width: 16),
               _buildStatusLegend('Planned', FeatureStatus.planned, isDark),
@@ -222,7 +257,7 @@ class UpcomingFeaturesScreen extends StatelessWidget {
                 const SizedBox(width: 12),
                 Expanded(
                   child: Text(
-                    'Have a feature idea? We\'d love to hear from you!',
+                    'Have a feature idea? Go to Settings → Request New Feature!',
                     style: GoogleFonts.inter(fontSize: 13),
                   ),
                 ),
@@ -237,13 +272,26 @@ class UpcomingFeaturesScreen extends StatelessWidget {
   }
 
   Widget _buildStatusLegend(String label, FeatureStatus status, bool isDark) {
+    Color dotColor;
+    switch (status) {
+      case FeatureStatus.completed:
+        dotColor = Colors.green;
+        break;
+      case FeatureStatus.inProgress:
+        dotColor = Colors.amber;
+        break;
+      case FeatureStatus.planned:
+        dotColor = Colors.grey;
+        break;
+    }
+    
     return Row(
       children: [
         Container(
           width: 10,
           height: 10,
           decoration: BoxDecoration(
-            color: status == FeatureStatus.inProgress ? Colors.amber : Colors.grey,
+            color: dotColor,
             shape: BoxShape.circle,
           ),
         ),
@@ -276,13 +324,17 @@ class UpcomingFeaturesScreen extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
+              color: feature.status == FeatureStatus.completed
+                  ? Colors.green.withValues(alpha: 0.15)
+                  : Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(10),
             ),
             child: Icon(
               feature.icon,
               size: 22,
-              color: Theme.of(context).colorScheme.primary,
+              color: feature.status == FeatureStatus.completed
+                  ? Colors.green
+                  : Theme.of(context).colorScheme.primary,
             ),
           ),
           const SizedBox(width: 14),
@@ -337,26 +389,47 @@ class UpcomingFeaturesScreen extends StatelessWidget {
   }
 
   Widget _buildStatusBadge(FeatureStatus status) {
-    final isInProgress = status == FeatureStatus.inProgress;
+    String label;
+    Color bgColor;
+    Color textColor;
+    
+    switch (status) {
+      case FeatureStatus.completed:
+        label = 'COMPLETED';
+        bgColor = Colors.green.withValues(alpha: 0.15);
+        textColor = Colors.green[700]!;
+        break;
+      case FeatureStatus.inProgress:
+        label = 'IN PROGRESS';
+        bgColor = Colors.amber.withValues(alpha: 0.15);
+        textColor = Colors.amber[700]!;
+        break;
+      case FeatureStatus.planned:
+        label = 'PLANNED';
+        bgColor = Colors.grey.withValues(alpha: 0.15);
+        textColor = Colors.grey[600]!;
+        break;
+    }
+    
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
       decoration: BoxDecoration(
-        color: isInProgress ? Colors.amber.withValues(alpha: 0.15) : Colors.grey.withValues(alpha: 0.15),
+        color: bgColor,
         borderRadius: BorderRadius.circular(4),
       ),
       child: Text(
-        isInProgress ? 'IN PROGRESS' : 'PLANNED',
+        label,
         style: GoogleFonts.inter(
           fontSize: 9,
           fontWeight: FontWeight.bold,
-          color: isInProgress ? Colors.amber[700] : Colors.grey[600],
+          color: textColor,
         ),
       ),
     );
   }
 }
 
-enum FeatureStatus { inProgress, planned }
+enum FeatureStatus { completed, inProgress, planned }
 
 class _FeatureItem {
   final IconData icon;
@@ -373,3 +446,4 @@ class _FeatureItem {
     required this.category,
   });
 }
+
