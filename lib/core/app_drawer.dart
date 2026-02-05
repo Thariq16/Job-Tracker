@@ -110,6 +110,43 @@ class AppDrawer extends ConsumerWidget {
                 ),
 
                 const SizedBox(height: 16),
+                _buildSectionTitle('LINKEDIN HUB', isDark),
+                _buildNavItem(
+                  context,
+                  icon: Icons.checklist_outlined,
+                  selectedIcon: Icons.checklist,
+                  label: 'Profile Checklist',
+                  isSelected: selectedIndex == 6,
+                  onTap: () {
+                    Navigator.pop(context);
+                    context.push('/linkedin-checklist');
+                  },
+                ),
+                _buildNavItem(
+                  context,
+                  icon: Icons.business_outlined,
+                  selectedIcon: Icons.business,
+                  label: 'Target Companies',
+                  isSelected: selectedIndex == 7,
+                  onTap: () {
+                    Navigator.pop(context);
+                    context.push('/target-companies');
+                  },
+                  isNew: true,
+                ),
+                _buildNavItem(
+                  context,
+                  icon: Icons.today_outlined,
+                  selectedIcon: Icons.today,
+                  label: 'Daily Engagement',
+                  isSelected: selectedIndex == 8,
+                  onTap: () {
+                    Navigator.pop(context);
+                    context.push('/daily-engagement');
+                  },
+                ),
+
+                const SizedBox(height: 16),
                 _buildSectionTitle('ACCOUNT', isDark),
                 _buildNavItem(
                   context,

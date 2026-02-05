@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'dart:typed_data';
 import 'package:job_tracker/services/job_parsing_service.dart';
+import 'package:job_tracker/features/target_companies/add_to_target_prompt.dart';
 import 'jobs_provider.dart';
 import 'job_model.dart';
 
@@ -343,7 +344,7 @@ class _AddJobModalState extends ConsumerState<AddJobModal> {
     );
   }
 
-  void _submitForm() {
+  Future<void> _submitForm() async {
     if (_companyController.text.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Company name is required'), backgroundColor: Colors.red),
@@ -399,8 +400,25 @@ class _AddJobModalState extends ConsumerState<AddJobModal> {
       );
     }
     
+    // Close the modal first
     if (mounted) {
       Navigator.pop(context);
+    
+      // Show target company prompt for new jobs only
+      if (widget.jobToEdit == null) {
+        final companyName = _companyController.text.trim();
+        if (companyName.isNotEmpty) {
+          // Small delay to let the modal close animation complete
+          await Future.delayed(const Duration(milliseconds: 300));
+          if (context.mounted) {
+            await showAddToTargetCompaniesPrompt(
+              context: context,
+              ref: ref,
+              companyName: companyName,
+            );
+          }
+        }
+      }
     }
   }
 }

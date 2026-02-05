@@ -51,8 +51,23 @@ class LinkedInSetupRepository {
   Future<void> markTaskComplete(String taskId) async {
     if (_userId == null) return;
 
+    // Get current data first
+    final doc = await _progressDoc.get();
+    Map<String, Timestamp> currentTasks = {};
+    
+    if (doc.exists) {
+      final data = doc.data();
+      if (data != null && data['completedTasks'] != null) {
+        final tasksData = data['completedTasks'] as Map<String, dynamic>;
+        currentTasks = tasksData.map((key, value) => MapEntry(key, value as Timestamp));
+      }
+    }
+    
+    // Add the new task
+    currentTasks[taskId] = Timestamp.now();
+
     await _progressDoc.set({
-      'completedTasks.$taskId': Timestamp.now(),
+      'completedTasks': currentTasks,
       'startedAt': FieldValue.serverTimestamp(),
     }, SetOptions(merge: true));
 
@@ -64,10 +79,34 @@ class LinkedInSetupRepository {
   Future<void> markTaskIncomplete(String taskId) async {
     if (_userId == null) return;
 
-    await _progressDoc.update({
-      'completedTasks.$taskId': FieldValue.delete(),
-      'completedAt': null,  // Reset completion if any task is unchecked
-    });
+    // Get current data first
+    final doc = await _progressDoc.get();
+    if (!doc.exists) return;
+    
+    final data = doc.data();
+    if (data == null) return;
+
+    Map<String, Timestamp> currentTasks = {};
+    if (data['completedTasks'] != null) {
+      final tasksData = data['completedTasks'] as Map<String, dynamic>;
+      currentTasks = tasksData.map((key, value) => MapEntry(key, value as Timestamp));
+    }
+    
+    // Remove the task
+    currentTasks.remove(taskId);
+
+    // Also remove sub-steps for this task
+    Map<String, dynamic> currentSubSteps = {};
+    if (data['completedSubSteps'] != null) {
+      currentSubSteps = Map<String, dynamic>.from(data['completedSubSteps'] as Map);
+      currentSubSteps.remove(taskId);
+    }
+
+    await _progressDoc.set({
+      'completedTasks': currentTasks,
+      'completedSubSteps': currentSubSteps,
+      'completedAt': null,
+    }, SetOptions(merge: true));
   }
 
   /// Toggle task completion status
@@ -77,6 +116,39 @@ class LinkedInSetupRepository {
     } else {
       await markTaskIncomplete(taskId);
     }
+  }
+
+  /// Toggle a sub-step completion status
+  Future<void> toggleSubStep(String taskId, String subStepId, bool isComplete) async {
+    if (_userId == null) return;
+
+    // Get current data first
+    final doc = await _progressDoc.get();
+    Map<String, List<String>> currentSubSteps = {};
+    
+    if (doc.exists) {
+      final data = doc.data();
+      if (data != null && data['completedSubSteps'] != null) {
+        final subStepsData = data['completedSubSteps'] as Map<String, dynamic>;
+        currentSubSteps = subStepsData.map((key, value) => 
+          MapEntry(key, List<String>.from(value as List)));
+      }
+    }
+    
+    // Update the sub-steps for this task
+    if (isComplete) {
+      currentSubSteps.putIfAbsent(taskId, () => []);
+      if (!currentSubSteps[taskId]!.contains(subStepId)) {
+        currentSubSteps[taskId]!.add(subStepId);
+      }
+    } else {
+      currentSubSteps[taskId]?.remove(subStepId);
+    }
+
+    await _progressDoc.set({
+      'completedSubSteps': currentSubSteps,
+      'startedAt': FieldValue.serverTimestamp(),
+    }, SetOptions(merge: true));
   }
 
   /// Check badges and award if earned
@@ -103,17 +175,17 @@ class LinkedInSetupRepository {
         if (phaseTaskIds.difference(completedTasks).isEmpty) {
           // All tasks in this phase are complete
           switch (phase) {
-            case 'Profile Basics':
-              badgeToAward = 'profile_basics';
+            case 'Quick Wins':
+              badgeToAward = 'quick_wins';
               break;
-            case 'Experience & Skills':
-              badgeToAward = 'experience_master';
+            case 'Profile Content':
+              badgeToAward = 'content_creator';
               break;
-            case 'Credibility Boosters':
+            case 'Credibility Builders':
               badgeToAward = 'credibility_king';
               break;
-            case 'Networking Ready':
-              badgeToAward = 'network_ninja';
+            case 'Visibility & Engagement':
+              badgeToAward = 'visibility_master';
               break;
           }
         }

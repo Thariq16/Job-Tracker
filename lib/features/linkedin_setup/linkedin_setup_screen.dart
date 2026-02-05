@@ -19,7 +19,7 @@ class LinkedInSetupScreen extends ConsumerStatefulWidget {
 class _LinkedInSetupScreenState extends ConsumerState<LinkedInSetupScreen> 
     with SingleTickerProviderStateMixin {
   late AnimationController _celebrationController;
-  final Set<String> _expandedPhases = {'Profile Basics'};  // Start with first phase expanded
+  final Set<String> _expandedPhases = {'Quick Wins'};  // Start with first phase expanded
   bool _showCelebration = false;
 
   @override
@@ -196,12 +196,24 @@ class _LinkedInSetupScreenState extends ConsumerState<LinkedInSetupScreen>
               ),
             ),
             const SizedBox(height: 8),
-            Text(
-              '${(stats.percentComplete * 100).toInt()}% complete',
-              style: GoogleFonts.inter(
-                fontSize: 12,
-                color: Colors.white.withValues(alpha: 0.8),
-              ),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  '${(stats.percentComplete * 100).toInt()}% complete',
+                  style: GoogleFonts.inter(
+                    fontSize: 12,
+                    color: Colors.white.withValues(alpha: 0.8),
+                  ),
+                ),
+                Text(
+                  stats.timeEstimate,
+                  style: GoogleFonts.inter(
+                    fontSize: 12,
+                    color: Colors.white.withValues(alpha: 0.8),
+                  ),
+                ),
+              ],
             ),
           ],
         ),
@@ -439,7 +451,7 @@ class _LinkedInSetupScreenState extends ConsumerState<LinkedInSetupScreen>
     final isCompleted = taskStatus.isCompleted;
 
     return InkWell(
-      onTap: () => _showTaskDetail(context, task, isCompleted, isDark),
+      onTap: () => _showTaskDetail(context, taskStatus, isDark),
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         child: Row(
@@ -502,12 +514,36 @@ class _LinkedInSetupScreenState extends ConsumerState<LinkedInSetupScreen>
                           : null,
                     ),
                   ),
-                  Text(
-                    task.description,
-                    style: GoogleFonts.inter(
-                      fontSize: 12,
-                      color: isDark ? Colors.grey[500] : Colors.grey[500],
-                    ),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          task.description,
+                          style: GoogleFonts.inter(
+                            fontSize: 12,
+                            color: isDark ? Colors.grey[500] : Colors.grey[500],
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: isDark 
+                              ? Colors.blue.withValues(alpha: 0.2) 
+                              : Colors.blue.withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: Text(
+                          '${task.estimatedMinutes}m',
+                          style: GoogleFonts.inter(
+                            fontSize: 10,
+                            fontWeight: FontWeight.w600,
+                            color: const Color(0xFF0077B5),
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),
@@ -524,152 +560,282 @@ class _LinkedInSetupScreenState extends ConsumerState<LinkedInSetupScreen>
     );
   }
 
-  void _showTaskDetail(BuildContext context, LinkedInSetupTask task, bool isCompleted, bool isDark) {
+  void _showTaskDetail(BuildContext context, TaskWithStatus taskStatus, bool isDark) {
+    final task = taskStatus.task;
+    final isCompleted = taskStatus.isCompleted;
+    
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (context) => Container(
-        decoration: BoxDecoration(
-          color: isDark ? const Color(0xFF1A1A2E) : Colors.white,
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
-        ),
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Handle
-            Center(
-              child: Container(
-                width: 40,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: Colors.grey[400],
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
-            ),
-            const SizedBox(height: 20),
-            
-            // Task Header
-            Row(
+      builder: (context) => StatefulBuilder(
+        builder: (context, setSheetState) => Container(
+          constraints: BoxConstraints(
+            maxHeight: MediaQuery.of(context).size.height * 0.85,
+          ),
+          decoration: BoxDecoration(
+            color: isDark ? const Color(0xFF1A1A2E) : Colors.white,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+          ),
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF0077B5).withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Icon(
-                    _getIconData(task.icon),
-                    color: const Color(0xFF0077B5),
-                    size: 24,
-                  ),
-                ),
-                const SizedBox(width: 14),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        task.title,
-                        style: GoogleFonts.outfit(
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      Text(
-                        task.phase,
-                        style: GoogleFonts.inter(
-                          fontSize: 13,
-                          color: Colors.grey[600],
-                        ),
-                      ),
-                    ],
+                // Handle
+                Center(
+                  child: Container(
+                    width: 40,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: Colors.grey[400],
+                      borderRadius: BorderRadius.circular(2),
+                    ),
                   ),
                 ),
-              ],
-            ),
-            
-            const SizedBox(height: 20),
-            
-            // Description
-            Text(
-              task.description,
-              style: GoogleFonts.inter(fontSize: 15),
-            ),
-            
-            // Tip
-            if (task.tip != null) ...[
-              const SizedBox(height: 16),
-              Container(
-                padding: const EdgeInsets.all(14),
-                decoration: BoxDecoration(
-                  color: Colors.amber.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: Colors.amber.withValues(alpha: 0.3)),
-                ),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                const SizedBox(height: 20),
+                
+                // Task Header
+                Row(
                   children: [
-                    const Icon(Icons.lightbulb, color: Colors.amber, size: 20),
-                    const SizedBox(width: 10),
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF0077B5).withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Icon(
+                        _getIconData(task.icon),
+                        color: const Color(0xFF0077B5),
+                        size: 24,
+                      ),
+                    ),
+                    const SizedBox(width: 14),
                     Expanded(
-                      child: Text(
-                        task.tip!,
-                        style: GoogleFonts.inter(
-                          fontSize: 13,
-                          color: isDark ? Colors.amber[200] : Colors.amber[900],
-                        ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            task.title,
+                            style: GoogleFonts.outfit(
+                              fontSize: 20,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          Row(
+                            children: [
+                              Text(
+                                task.phase,
+                                style: GoogleFonts.inter(
+                                  fontSize: 13,
+                                  color: Colors.grey[600],
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFF0077B5).withValues(alpha: 0.1),
+                                  borderRadius: BorderRadius.circular(4),
+                                ),
+                                child: Text(
+                                  '~${task.estimatedMinutes} min',
+                                  style: GoogleFonts.inter(
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w600,
+                                    color: const Color(0xFF0077B5),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
                       ),
                     ),
                   ],
                 ),
-              ),
-            ],
-            
-            const SizedBox(height: 20),
-            
-            // LinkedIn Link Button
-            if (task.linkedInUrl != null)
-              OutlinedButton.icon(
-                onPressed: () => _launchUrl(task.linkedInUrl!),
-                icon: const Icon(Icons.open_in_new, size: 18),
-                label: const Text('Open in LinkedIn'),
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: const Color(0xFF0077B5),
-                  side: const BorderSide(color: Color(0xFF0077B5)),
-                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                
+                const SizedBox(height: 20),
+                
+                // Description
+                Text(
+                  task.description,
+                  style: GoogleFonts.inter(fontSize: 15),
                 ),
-              ),
-            
-            const SizedBox(height: 16),
-            
-            // Mark Complete Button
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton.icon(
-                onPressed: () {
-                  ref.read(linkedInSetupControllerProvider.notifier)
-                      .toggleTask(task.id, !isCompleted);
-                  Navigator.pop(context);
-                },
-                icon: Icon(isCompleted ? Icons.close : Icons.check),
-                label: Text(isCompleted ? 'Mark as Incomplete' : 'Mark as Complete'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: isCompleted ? Colors.grey : const Color(0xFF0077B5),
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 14),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
+                
+                // Sub-steps section
+                if (task.subSteps != null && task.subSteps!.isNotEmpty) ...[
+                  const SizedBox(height: 20),
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.grey[50],
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: isDark ? Colors.white.withValues(alpha: 0.1) : Colors.grey[200]!,
+                      ),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Icon(
+                              Icons.checklist,
+                              size: 18,
+                              color: isDark ? Colors.grey[400] : Colors.grey[600],
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              'Steps to complete',
+                              style: GoogleFonts.outfit(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w600,
+                                color: isDark ? Colors.grey[300] : Colors.grey[700],
+                              ),
+                            ),
+                            const Spacer(),
+                            Text(
+                              '${taskStatus.completedSubStepCount}/${taskStatus.totalSubStepCount}',
+                              style: GoogleFonts.inter(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600,
+                                color: const Color(0xFF0077B5),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 12),
+                        ...task.subSteps!.map((subStep) {
+                          final isSubStepCompleted = taskStatus.isSubStepCompleted(subStep.id);
+                          return Padding(
+                            padding: const EdgeInsets.only(bottom: 8),
+                            child: InkWell(
+                              onTap: () {
+                                ref.read(linkedInSetupControllerProvider.notifier)
+                                    .toggleSubStep(task.id, subStep.id, !isSubStepCompleted);
+                                setSheetState(() {});
+                              },
+                              borderRadius: BorderRadius.circular(8),
+                              child: Padding(
+                                padding: const EdgeInsets.symmetric(vertical: 4),
+                                child: Row(
+                                  children: [
+                                    AnimatedContainer(
+                                      duration: const Duration(milliseconds: 200),
+                                      width: 22,
+                                      height: 22,
+                                      decoration: BoxDecoration(
+                                        color: isSubStepCompleted ? const Color(0xFF0077B5) : Colors.transparent,
+                                        borderRadius: BorderRadius.circular(5),
+                                        border: Border.all(
+                                          color: isSubStepCompleted 
+                                              ? const Color(0xFF0077B5) 
+                                              : (isDark ? Colors.grey[600]! : Colors.grey[400]!),
+                                          width: 2,
+                                        ),
+                                      ),
+                                      child: isSubStepCompleted
+                                          ? const Icon(Icons.check, size: 14, color: Colors.white)
+                                          : null,
+                                    ),
+                                    const SizedBox(width: 12),
+                                    Expanded(
+                                      child: Text(
+                                        subStep.title,
+                                        style: GoogleFonts.inter(
+                                          fontSize: 13,
+                                          decoration: isSubStepCompleted ? TextDecoration.lineThrough : null,
+                                          color: isSubStepCompleted
+                                              ? (isDark ? Colors.grey[500] : Colors.grey[400])
+                                              : (isDark ? Colors.grey[300] : Colors.grey[700]),
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          );
+                        }),
+                      ],
+                    ),
+                  ),
+                ],
+                
+                // Tip
+                if (task.tip != null) ...[
+                  const SizedBox(height: 16),
+                  Container(
+                    padding: const EdgeInsets.all(14),
+                    decoration: BoxDecoration(
+                      color: Colors.amber.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: Colors.amber.withValues(alpha: 0.3)),
+                    ),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Icon(Icons.lightbulb, color: Colors.amber, size: 20),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Text(
+                            task.tip!,
+                            style: GoogleFonts.inter(
+                              fontSize: 13,
+                              color: isDark ? Colors.amber[200] : Colors.amber[900],
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+                
+                const SizedBox(height: 20),
+                
+                // LinkedIn Link Button
+                if (task.linkedInUrl != null)
+                  OutlinedButton.icon(
+                    onPressed: () => _launchUrl(task.linkedInUrl!),
+                    icon: const Icon(Icons.open_in_new, size: 18),
+                    label: const Text('Open in LinkedIn'),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: const Color(0xFF0077B5),
+                      side: const BorderSide(color: Color(0xFF0077B5)),
+                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                    ),
+                  ),
+                
+                const SizedBox(height: 16),
+                
+                // Mark Complete Button
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton.icon(
+                    onPressed: () {
+                      ref.read(linkedInSetupControllerProvider.notifier)
+                          .toggleTask(task.id, !isCompleted);
+                      Navigator.pop(context);
+                    },
+                    icon: Icon(isCompleted ? Icons.close : Icons.check),
+                    label: Text(isCompleted ? 'Mark as Incomplete' : 'Mark as Complete'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: isCompleted ? Colors.grey : const Color(0xFF0077B5),
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
                   ),
                 ),
-              ),
+                
+                SizedBox(height: MediaQuery.of(context).viewInsets.bottom + 16),
+              ],
             ),
-            
-            SizedBox(height: MediaQuery.of(context).viewInsets.bottom + 16),
-          ],
+          ),
         ),
       ),
     );

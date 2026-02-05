@@ -34,6 +34,17 @@ class LinkedInSetupController extends Notifier<AsyncValue<void>> {
     }
   }
 
+  /// Toggle a sub-step's completion status
+  Future<void> toggleSubStep(String taskId, String subStepId, bool isComplete) async {
+    state = const AsyncValue.loading();
+    try {
+      await _repository.toggleSubStep(taskId, subStepId, isComplete);
+      state = const AsyncValue.data(null);
+    } catch (e, st) {
+      state = AsyncValue.error(e, st);
+    }
+  }
+
   /// Mark a task as complete
   Future<void> completeTask(String taskId) async {
     await toggleTask(taskId, true);
@@ -70,6 +81,7 @@ final linkedInTasksByPhaseProvider = Provider<AsyncValue<Map<String, List<TaskWi
           task: task,
           isCompleted: progress.isTaskCompleted(task.id),
           completedAt: progress.completedTasks[task.id],
+          completedSubSteps: progress.completedSubSteps[task.id] ?? [],
         )).toList();
       }
       
@@ -85,12 +97,27 @@ class TaskWithStatus {
   final LinkedInSetupTask task;
   final bool isCompleted;
   final DateTime? completedAt;
+  final List<String> completedSubSteps;
 
   TaskWithStatus({
     required this.task,
     required this.isCompleted,
     this.completedAt,
+    this.completedSubSteps = const [],
   });
+
+  bool isSubStepCompleted(String subStepId) => completedSubSteps.contains(subStepId);
+  
+  int get completedSubStepCount => completedSubSteps.length;
+  
+  int get totalSubStepCount => task.subSteps?.length ?? 0;
+  
+  bool get hasSubSteps => task.subSteps != null && task.subSteps!.isNotEmpty;
+  
+  double get subStepProgress {
+    if (!hasSubSteps) return 0;
+    return completedSubStepCount / totalSubStepCount;
+  }
 }
 
 /// Provider for overall progress stats
@@ -102,6 +129,15 @@ final linkedInProgressStatsProvider = Provider<AsyncValue<ProgressStats>>((ref) 
       final total = LinkedInSetupTasks.totalCount;
       final completed = progress.completedCount;
       final percent = progress.getProgressPercent(total);
+      final totalMinutes = LinkedInSetupTasks.totalMinutes;
+      
+      // Calculate remaining minutes based on incomplete tasks
+      int remainingMinutes = 0;
+      for (final task in LinkedInSetupTasks.all) {
+        if (!progress.isTaskCompleted(task.id)) {
+          remainingMinutes += task.estimatedMinutes;
+        }
+      }
       
       return AsyncValue.data(ProgressStats(
         completedCount: completed,
@@ -109,6 +145,8 @@ final linkedInProgressStatsProvider = Provider<AsyncValue<ProgressStats>>((ref) 
         percentComplete: percent,
         isFullyComplete: completed == total,
         earnedBadge: progress.earnedBadge,
+        totalMinutes: totalMinutes,
+        remainingMinutes: remainingMinutes,
       ));
     },
     loading: () => const AsyncValue.loading(),
@@ -122,6 +160,8 @@ class ProgressStats {
   final double percentComplete;
   final bool isFullyComplete;
   final String? earnedBadge;
+  final int totalMinutes;
+  final int remainingMinutes;
 
   ProgressStats({
     required this.completedCount,
@@ -129,9 +169,21 @@ class ProgressStats {
     required this.percentComplete,
     required this.isFullyComplete,
     this.earnedBadge,
+    this.totalMinutes = 0,
+    this.remainingMinutes = 0,
   });
 
   String get progressText => '$completedCount/$totalCount';
+  
+  String get timeEstimate {
+    if (isFullyComplete) return 'Complete! 🎉';
+    final hours = remainingMinutes ~/ 60;
+    final mins = remainingMinutes % 60;
+    if (hours > 0) {
+      return '~${hours}h ${mins}m left';
+    }
+    return '~${mins}m left';
+  }
   
   String get motivationalMessage {
     if (isFullyComplete) return '🏆 You\'re a LinkedIn Legend!';
