@@ -38,6 +38,14 @@ class UpcomingFeaturesScreen extends StatelessWidget {
         status: FeatureStatus.completed,
         category: 'Feedback',
       ),
+      _FeatureItem(
+        icon: Icons.bug_report,
+        title: 'Bug Reports',
+        description: 'Report issues with severity levels to help us improve',
+        status: FeatureStatus.completed,
+        category: 'Feedback',
+      ),
+      // Removed: Admin Dashboard (internal feature)
       
       // In Progress
       _FeatureItem(
@@ -47,18 +55,12 @@ class UpcomingFeaturesScreen extends StatelessWidget {
         status: FeatureStatus.inProgress,
         category: 'Networking',
       ),
-      _FeatureItem(
-        icon: Icons.star_rate,
-        title: 'Net Promoter Score',
-        description: 'Share your feedback to help us improve',
-        status: FeatureStatus.inProgress,
-        category: 'Feedback',
-      ),
+      // Removed: NPS (internal feature)
       _FeatureItem(
         icon: Icons.person_add,
         title: 'Invite a Friend',
         description: 'Share the app with friends and earn rewards',
-        status: FeatureStatus.inProgress,
+        status: FeatureStatus.completed,
         category: 'Growth',
       ),
       

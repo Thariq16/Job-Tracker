@@ -4,6 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:go_router/go_router.dart';
 import 'package:job_tracker/core/theme_provider.dart';
+import 'package:job_tracker/core/admin_guard.dart';
 
 class AppDrawer extends ConsumerWidget {
   final int selectedIndex;
@@ -15,6 +16,7 @@ class AppDrawer extends ConsumerWidget {
     final user = FirebaseAuth.instance.currentUser;
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final themeMode = ref.watch(themeModeProvider);
+    final showAdmin = isCurrentUserAdmin();
 
     return Drawer(
       child: Column(
@@ -197,6 +199,23 @@ class AppDrawer extends ConsumerWidget {
                   },
                   isNew: true,
                 ),
+
+                // Admin section - only visible to admins
+                if (showAdmin) ...[
+                  const SizedBox(height: 16),
+                  _buildSectionTitle('ADMIN', isDark),
+                  _buildNavItem(
+                    context,
+                    icon: Icons.admin_panel_settings_outlined,
+                    selectedIcon: Icons.admin_panel_settings,
+                    label: 'Admin Dashboard',
+                    isSelected: selectedIndex == 9,
+                    onTap: () {
+                      Navigator.pop(context);
+                      context.push('/admin');
+                    },
+                  ),
+                ],
               ],
             ),
           ),

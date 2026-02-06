@@ -16,6 +16,8 @@ import 'features/subscription/subscription_screen.dart';
 import 'features/linkedin_setup/linkedin_setup_screen.dart';
 import 'features/target_companies/target_companies_screen.dart';
 import 'features/daily_engagement/daily_engagement_screen.dart';
+import 'features/admin/admin_screen.dart';
+import 'features/referral/referral_screen.dart';
 
 final routerProvider = Provider<GoRouter>((ref) {
   final authState = ValueNotifier<AsyncValue<User?>>(const AsyncValue.loading());
@@ -87,6 +89,14 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/daily-engagement',
         builder: (context, state) => const DailyEngagementScreen(),
+      ),
+      GoRoute(
+        path: '/admin',
+        builder: (context, state) => const AdminScreen(),
+      ),
+      GoRoute(
+        path: '/referral',
+        builder: (context, state) => const ReferralScreen(),
       ),
     ],
     redirect: (context, state) {
