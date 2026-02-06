@@ -18,9 +18,11 @@ import 'features/target_companies/target_companies_screen.dart';
 import 'features/daily_engagement/daily_engagement_screen.dart';
 import 'features/admin/admin_screen.dart';
 import 'features/referral/referral_screen.dart';
+import 'core/analytics_service.dart';
 
 final routerProvider = Provider<GoRouter>((ref) {
   final authState = ValueNotifier<AsyncValue<User?>>(const AsyncValue.loading());
+  final analytics = ref.read(analyticsProvider);
 
   ref.listen<AsyncValue<User?>>(
     authStateChangesProvider,
@@ -33,6 +35,7 @@ final routerProvider = Provider<GoRouter>((ref) {
   return GoRouter(
     initialLocation: '/',
     refreshListenable: authState,
+    observers: [analytics.observer],
     routes: [
       GoRoute(
         path: '/',
