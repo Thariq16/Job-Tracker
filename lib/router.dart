@@ -11,13 +11,14 @@ import 'features/jobs/job_detail_screen.dart';
 import 'features/profile/profile_screen.dart';
 import 'features/settings/settings_screen.dart';
 import 'features/notifications/notifications_screen.dart';
-import 'features/upcoming/upcoming_features_screen.dart';
+// import 'features/upcoming/upcoming_features_screen.dart';
 import 'features/subscription/subscription_screen.dart';
 import 'features/linkedin_setup/linkedin_setup_screen.dart';
 import 'features/target_companies/target_companies_screen.dart';
 import 'features/daily_engagement/daily_engagement_screen.dart';
 import 'features/admin/admin_screen.dart';
 import 'features/referral/referral_screen.dart';
+import 'features/daily_actions/daily_actions_screen.dart';
 import 'core/analytics_service.dart';
 
 final routerProvider = Provider<GoRouter>((ref) {
@@ -65,10 +66,10 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/notifications',
         builder: (context, state) => const NotificationsScreen(),
       ),
-      GoRoute(
-        path: '/upcoming',
-        builder: (context, state) => const UpcomingFeaturesScreen(),
-      ),
+      // GoRoute(
+      //   path: '/upcoming',
+      //   builder: (context, state) => const UpcomingFeaturesScreen(),
+      // ),
       GoRoute(
         path: '/job/:id',
         builder: (context, state) => JobDetailScreen(jobId: state.pathParameters['id']!),
@@ -92,6 +93,10 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/daily-engagement',
         builder: (context, state) => const DailyEngagementScreen(),
+      ),
+      GoRoute(
+        path: '/daily-actions',
+        builder: (context, state) => const DailyActionsScreen(),
       ),
       GoRoute(
         path: '/admin',

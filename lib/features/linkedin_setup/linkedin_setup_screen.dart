@@ -664,103 +664,130 @@ class _LinkedInSetupScreenState extends ConsumerState<LinkedInSetupScreen>
                   style: GoogleFonts.inter(fontSize: 15),
                 ),
                 
-                // Sub-steps section
+                // Sub-steps section - wrapped in Consumer for real-time updates
                 if (task.subSteps != null && task.subSteps!.isNotEmpty) ...[
                   const SizedBox(height: 20),
-                  Container(
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.grey[50],
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(
-                        color: isDark ? Colors.white.withValues(alpha: 0.1) : Colors.grey[200]!,
-                      ),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            Icon(
-                              Icons.checklist,
-                              size: 18,
-                              color: isDark ? Colors.grey[400] : Colors.grey[600],
-                            ),
-                            const SizedBox(width: 8),
-                            Text(
-                              'Steps to complete',
-                              style: GoogleFonts.outfit(
-                                fontSize: 14,
-                                fontWeight: FontWeight.w600,
-                                color: isDark ? Colors.grey[300] : Colors.grey[700],
+                  Consumer(
+                    builder: (context, ref, child) {
+                      // Watch the provider for real-time updates
+                      final tasksByPhaseAsync = ref.watch(linkedInTasksByPhaseProvider);
+                      
+                      return tasksByPhaseAsync.when(
+                        loading: () => const SizedBox.shrink(),
+                        error: (e, st) => const SizedBox.shrink(),
+                        data: (tasksByPhase) {
+                          // Find the updated taskStatus from the provider
+                          TaskWithStatus? currentTaskStatus;
+                          for (final phase in tasksByPhase.values) {
+                            for (final ts in phase) {
+                              if (ts.task.id == task.id) {
+                                currentTaskStatus = ts;
+                                break;
+                              }
+                            }
+                            if (currentTaskStatus != null) break;
+                          }
+                          
+                          // Fallback to original if not found
+                          final activeTaskStatus = currentTaskStatus ?? taskStatus;
+                          
+                          return Container(
+                            padding: const EdgeInsets.all(16),
+                            decoration: BoxDecoration(
+                              color: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.grey[50],
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(
+                                color: isDark ? Colors.white.withValues(alpha: 0.1) : Colors.grey[200]!,
                               ),
                             ),
-                            const Spacer(),
-                            Text(
-                              '${taskStatus.completedSubStepCount}/${taskStatus.totalSubStepCount}',
-                              style: GoogleFonts.inter(
-                                fontSize: 12,
-                                fontWeight: FontWeight.w600,
-                                color: const Color(0xFF0077B5),
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 12),
-                        ...task.subSteps!.map((subStep) {
-                          final isSubStepCompleted = taskStatus.isSubStepCompleted(subStep.id);
-                          return Padding(
-                            padding: const EdgeInsets.only(bottom: 8),
-                            child: InkWell(
-                              onTap: () {
-                                ref.read(linkedInSetupControllerProvider.notifier)
-                                    .toggleSubStep(task.id, subStep.id, !isSubStepCompleted);
-                                setSheetState(() {});
-                              },
-                              borderRadius: BorderRadius.circular(8),
-                              child: Padding(
-                                padding: const EdgeInsets.symmetric(vertical: 4),
-                                child: Row(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
                                   children: [
-                                    AnimatedContainer(
-                                      duration: const Duration(milliseconds: 200),
-                                      width: 22,
-                                      height: 22,
-                                      decoration: BoxDecoration(
-                                        color: isSubStepCompleted ? const Color(0xFF0077B5) : Colors.transparent,
-                                        borderRadius: BorderRadius.circular(5),
-                                        border: Border.all(
-                                          color: isSubStepCompleted 
-                                              ? const Color(0xFF0077B5) 
-                                              : (isDark ? Colors.grey[600]! : Colors.grey[400]!),
-                                          width: 2,
-                                        ),
-                                      ),
-                                      child: isSubStepCompleted
-                                          ? const Icon(Icons.check, size: 14, color: Colors.white)
-                                          : null,
+                                    Icon(
+                                      Icons.checklist,
+                                      size: 18,
+                                      color: isDark ? Colors.grey[400] : Colors.grey[600],
                                     ),
-                                    const SizedBox(width: 12),
-                                    Expanded(
-                                      child: Text(
-                                        subStep.title,
-                                        style: GoogleFonts.inter(
-                                          fontSize: 13,
-                                          decoration: isSubStepCompleted ? TextDecoration.lineThrough : null,
-                                          color: isSubStepCompleted
-                                              ? (isDark ? Colors.grey[500] : Colors.grey[400])
-                                              : (isDark ? Colors.grey[300] : Colors.grey[700]),
-                                        ),
+                                    const SizedBox(width: 8),
+                                    Text(
+                                      'Steps to complete',
+                                      style: GoogleFonts.outfit(
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.w600,
+                                        color: isDark ? Colors.grey[300] : Colors.grey[700],
+                                      ),
+                                    ),
+                                    const Spacer(),
+                                    Text(
+                                      '${activeTaskStatus.completedSubStepCount}/${activeTaskStatus.totalSubStepCount}',
+                                      style: GoogleFonts.inter(
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w600,
+                                        color: const Color(0xFF0077B5),
                                       ),
                                     ),
                                   ],
                                 ),
-                              ),
+                                const SizedBox(height: 12),
+                                ...task.subSteps!.map((subStep) {
+                                  final isSubStepCompleted = activeTaskStatus.isSubStepCompleted(subStep.id);
+                                  return Padding(
+                                    padding: const EdgeInsets.only(bottom: 8),
+                                    child: InkWell(
+                                      onTap: () {
+                                        ref.read(linkedInSetupControllerProvider.notifier)
+                                            .toggleSubStep(task.id, subStep.id, !isSubStepCompleted);
+                                      },
+                                      borderRadius: BorderRadius.circular(8),
+                                      child: Padding(
+                                        padding: const EdgeInsets.symmetric(vertical: 4),
+                                        child: Row(
+                                          children: [
+                                            AnimatedContainer(
+                                              duration: const Duration(milliseconds: 200),
+                                              width: 22,
+                                              height: 22,
+                                              decoration: BoxDecoration(
+                                                color: isSubStepCompleted ? const Color(0xFF0077B5) : Colors.transparent,
+                                                borderRadius: BorderRadius.circular(5),
+                                                border: Border.all(
+                                                  color: isSubStepCompleted 
+                                                      ? const Color(0xFF0077B5) 
+                                                      : (isDark ? Colors.grey[600]! : Colors.grey[400]!),
+                                                  width: 2,
+                                                ),
+                                              ),
+                                              child: isSubStepCompleted
+                                                  ? const Icon(Icons.check, size: 14, color: Colors.white)
+                                                  : null,
+                                            ),
+                                            const SizedBox(width: 12),
+                                            Expanded(
+                                              child: Text(
+                                                subStep.title,
+                                                style: GoogleFonts.inter(
+                                                  fontSize: 13,
+                                                  decoration: isSubStepCompleted ? TextDecoration.lineThrough : null,
+                                                  color: isSubStepCompleted
+                                                      ? (isDark ? Colors.grey[500] : Colors.grey[400])
+                                                      : (isDark ? Colors.grey[300] : Colors.grey[700]),
+                                                ),
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+                                  );
+                                }),
+                              ],
                             ),
                           );
-                        }),
-                      ],
-                    ),
+                        },
+                      );
+                    },
                   ),
                 ],
                 

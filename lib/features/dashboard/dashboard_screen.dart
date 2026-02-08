@@ -7,6 +7,7 @@ import '../jobs/add_job_modal.dart';
 import '../jobs/jobs_provider.dart';
 import '../jobs/job_model.dart';
 import '../linkedin_setup/linkedin_setup_provider.dart';
+import '../daily_actions/daily_action_provider.dart';
 import 'package:job_tracker/core/app_drawer.dart';
 
 class DashboardScreen extends ConsumerWidget {
@@ -153,14 +154,12 @@ class DashboardScreen extends ConsumerWidget {
 
                 const SizedBox(height: 24),
 
-                // --- ACTIVITY CALENDAR ---
-                Text('Activity Map', style: GoogleFonts.outfit(fontSize: 18, fontWeight: FontWeight.bold)),
-                const SizedBox(height: 12),
-                _buildActivityCalendar(context, activityMap, isDark),
+                // --- DAILY ACTIONS CARD ---
+                _buildDailyActionsCard(context, ref, isDark),
 
                 const SizedBox(height: 24),
 
-                // --- LINKEDIN SETUP CARD ---
+                // --- LINKEDIN SETUP CARD (hidden when complete) ---
                 _buildLinkedInSetupCard(context, ref, isDark),
 
                 const SizedBox(height: 24),
@@ -270,18 +269,29 @@ class DashboardScreen extends ConsumerWidget {
           ),
           const SizedBox(height: 16),
           SizedBox(
-            width: 80,
-            height: 80,
+            width: 90,
+            height: 90,
             child: Stack(
               alignment: Alignment.center,
               children: [
-                CircularProgressIndicator(
-                  value: progress,
-                  strokeWidth: 8,
-                  backgroundColor: isDark ? Colors.white.withValues(alpha: 0.1) : Colors.grey[100],
-                  valueColor: AlwaysStoppedAnimation(isComplete ? Colors.green : Theme.of(context).colorScheme.primary),
+                SizedBox(
+                  width: 80,
+                  height: 80,
+                  child: CircularProgressIndicator(
+                    value: progress,
+                    strokeWidth: 8,
+                    backgroundColor: isDark ? Colors.white.withValues(alpha: 0.1) : Colors.grey[200],
+                    valueColor: AlwaysStoppedAnimation(isComplete ? Colors.green : Theme.of(context).colorScheme.primary),
+                  ),
                 ),
-                Text('${(progress * 100).toInt()}%', style: GoogleFonts.outfit(fontSize: 18, fontWeight: FontWeight.bold)),
+                Text(
+                  '${(progress * 100).toInt()}%',
+                  style: GoogleFonts.outfit(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: isDark ? Colors.white : Colors.black87,
+                  ),
+                ),
               ],
             ),
           ),
@@ -406,118 +416,217 @@ class DashboardScreen extends ConsumerWidget {
     return Colors.green;
   }
 
-  Widget _buildLinkedInSetupCard(BuildContext context, WidgetRef ref, bool isDark) {
-    final statsAsync = ref.watch(linkedInProgressStatsProvider);
+  Widget _buildDailyActionsCard(BuildContext context, WidgetRef ref, bool isDark) {
+    final actionsAsync = ref.watch(dailyActionsProvider);
     
-    return GestureDetector(
-      onTap: () => context.push('/linkedin-setup'),
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: isDark
-                ? [const Color(0xFF1A2D4A), const Color(0xFF0D1B2A)]
-                : [const Color(0xFF0077B5), const Color(0xFF00A0DC)],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
-          borderRadius: BorderRadius.circular(16),
-          boxShadow: [
-            BoxShadow(
-              color: const Color(0xFF0077B5).withValues(alpha: 0.2),
-              blurRadius: 8,
-              offset: const Offset(0, 4),
-            ),
-          ],
-        ),
-        child: Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(10),
-              decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.15),
-                borderRadius: BorderRadius.circular(12),
+    return actionsAsync.when(
+      loading: () => const SizedBox.shrink(),
+      error: (_, __) => const SizedBox.shrink(),
+      data: (doc) {
+        if (doc == null || doc.actions.isEmpty) {
+          return const SizedBox.shrink();
+        }
+        
+        final actions = doc.actions;
+        final completedCount = actions.where((a) => a.isCompleted).length;
+        final totalCount = actions.length;
+        final allComplete = completedCount == totalCount;
+        
+        return GestureDetector(
+          onTap: () => context.push('/daily-actions'),
+          child: Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: isDark
+                    ? [const Color(0xFF2D1B4E), const Color(0xFF1A1A2E)]
+                    : [const Color(0xFF667EEA), const Color(0xFF764BA2)],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
               ),
-              child: const Icon(Icons.badge_outlined, color: Colors.white, size: 24),
-            ),
-            const SizedBox(width: 14),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'LinkedIn Setup',
-                    style: GoogleFonts.outfit(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
-                    ),
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    'Optimize your profile for job hunting',
-                    style: GoogleFonts.inter(
-                      fontSize: 12,
-                      color: Colors.white.withValues(alpha: 0.8),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            statsAsync.when(
-              data: (stats) => Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                decoration: BoxDecoration(
-                  color: stats.isFullyComplete 
-                      ? Colors.green.withValues(alpha: 0.3)
-                      : Colors.white.withValues(alpha: 0.15),
-                  borderRadius: BorderRadius.circular(20),
+              borderRadius: BorderRadius.circular(16),
+              boxShadow: [
+                BoxShadow(
+                  color: const Color(0xFF667EEA).withValues(alpha: 0.2),
+                  blurRadius: 8,
+                  offset: const Offset(0, 4),
                 ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    if (stats.isFullyComplete) ...[
-                      const Icon(Icons.check_circle, color: Colors.greenAccent, size: 16),
-                      const SizedBox(width: 4),
+              ],
+            ),
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.15),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: const Icon(Icons.task_alt, color: Colors.white, size: 24),
+                ),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
                       Text(
-                        'Done',
-                        style: GoogleFonts.inter(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600,
-                          color: Colors.greenAccent,
-                        ),
-                      ),
-                    ] else ...[
-                      Text(
-                        stats.progressText,
-                        style: GoogleFonts.inter(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600,
+                        'Today\'s Actions',
+                        style: GoogleFonts.outfit(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
                           color: Colors.white,
                         ),
                       ),
+                      const SizedBox(height: 2),
+                      Text(
+                        allComplete ? 'All done for today! 🎉' : 'Focus on what matters most',
+                        style: GoogleFonts.inter(
+                          fontSize: 12,
+                          color: Colors.white.withValues(alpha: 0.8),
+                        ),
+                      ),
                     ],
-                  ],
+                  ),
                 ),
-              ),
-              loading: () => const SizedBox(
-                width: 20,
-                height: 20,
-                child: CircularProgressIndicator(
-                  strokeWidth: 2,
-                  color: Colors.white,
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: allComplete
+                        ? Colors.green.withValues(alpha: 0.3)
+                        : Colors.white.withValues(alpha: 0.15),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      if (allComplete) ...[
+                        const Icon(Icons.check_circle, color: Colors.greenAccent, size: 16),
+                        const SizedBox(width: 4),
+                        Text(
+                          'Done',
+                          style: GoogleFonts.inter(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.greenAccent,
+                          ),
+                        ),
+                      ] else ...[
+                        Text(
+                          '$completedCount/$totalCount',
+                          style: GoogleFonts.inter(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
                 ),
+                const SizedBox(width: 8),
+                Icon(
+                  Icons.chevron_right,
+                  color: Colors.white.withValues(alpha: 0.6),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildLinkedInSetupCard(BuildContext context, WidgetRef ref, bool isDark) {
+    final statsAsync = ref.watch(linkedInProgressStatsProvider);
+    
+    // Hide when fully complete
+    return statsAsync.when(
+      loading: () => const SizedBox.shrink(),
+      error: (_, __) => const SizedBox.shrink(),
+      data: (stats) {
+        if (stats.isFullyComplete) {
+          return const SizedBox.shrink();
+        }
+        
+        return GestureDetector(
+          onTap: () => context.push('/linkedin-setup'),
+          child: Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: isDark
+                    ? [const Color(0xFF1A2D4A), const Color(0xFF0D1B2A)]
+                    : [const Color(0xFF0077B5), const Color(0xFF00A0DC)],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
               ),
-              error: (_, __) => const Icon(Icons.error_outline, color: Colors.white54),
+              borderRadius: BorderRadius.circular(16),
+              boxShadow: [
+                BoxShadow(
+                  color: const Color(0xFF0077B5).withValues(alpha: 0.2),
+                  blurRadius: 8,
+                  offset: const Offset(0, 4),
+                ),
+              ],
             ),
-            const SizedBox(width: 8),
-            Icon(
-              Icons.chevron_right,
-              color: Colors.white.withValues(alpha: 0.6),
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.15),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: const Icon(Icons.badge_outlined, color: Colors.white, size: 24),
+                ),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'LinkedIn Setup',
+                        style: GoogleFonts.outfit(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        'Optimize your profile for job hunting',
+                        style: GoogleFonts.inter(
+                          fontSize: 12,
+                          color: Colors.white.withValues(alpha: 0.8),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.15),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Text(
+                    stats.progressText,
+                    style: GoogleFonts.inter(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.white,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Icon(
+                  Icons.chevron_right,
+                  color: Colors.white.withValues(alpha: 0.6),
+                ),
+              ],
             ),
-          ],
-        ),
-      ),
+          ),
+        );
+      },
     );
   }
 

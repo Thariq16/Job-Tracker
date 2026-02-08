@@ -6,6 +6,8 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:intl/intl.dart';
 import 'jobs_provider.dart';
 import 'add_job_modal.dart';
+import '../networking/networking_provider.dart';
+import '../networking/networking_model.dart';
 
 class JobDetailScreen extends ConsumerWidget {
   final String jobId;
@@ -186,6 +188,11 @@ class JobDetailScreen extends ConsumerWidget {
 
                 const SizedBox(height: 32),
 
+                // Networking Section
+                _buildNetworkingSection(context, ref, job),
+
+                const SizedBox(height: 32),
+
                 // Links Section
                 Text("Links", style: GoogleFonts.outfit(fontSize: 18, fontWeight: FontWeight.bold)),
                 const SizedBox(height: 12),
@@ -235,6 +242,281 @@ class JobDetailScreen extends ConsumerWidget {
         },
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => Center(child: Text("Error: $e")),
+      ),
+    );
+  }
+
+  Widget _buildNetworkingSection(BuildContext context, WidgetRef ref, JobModel job) {
+    final activitiesAsync = ref.watch(networkingForJobProvider(job.id));
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text("Networking", style: GoogleFonts.outfit(fontSize: 18, fontWeight: FontWeight.bold)),
+            TextButton.icon(
+              icon: const Icon(Icons.add, size: 18),
+              label: const Text("Log Activity"),
+              onPressed: () => _showAddActivityDialog(context, ref, job),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        activitiesAsync.when(
+          loading: () => const Center(child: CircularProgressIndicator()),
+          error: (e, _) => Text("Error loading activities: $e"),
+          data: (activities) {
+            if (activities.isEmpty) {
+              return Container(
+                padding: const EdgeInsets.all(24),
+                decoration: BoxDecoration(
+                  color: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.grey[50],
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: isDark ? Colors.white.withValues(alpha: 0.1) : Colors.grey[200]!),
+                ),
+                child: Center(
+                  child: Column(
+                    children: [
+                      Icon(Icons.connect_without_contact, size: 32, color: Colors.grey[400]),
+                      const SizedBox(height: 8),
+                      Text("No networking activities yet", style: GoogleFonts.inter(color: Colors.grey[500])),
+                      const SizedBox(height: 4),
+                      Text("Log follow-ups and recruiter messages here", style: GoogleFonts.inter(color: Colors.grey[400], fontSize: 12)),
+                    ],
+                  ),
+                ),
+              );
+            }
+            
+            return Column(
+              children: activities.map((activity) => _buildActivityCard(context, ref, activity, isDark)).toList(),
+            );
+          },
+        ),
+      ],
+    );
+  }
+
+  Widget _buildActivityCard(BuildContext context, WidgetRef ref, NetworkingActivity activity, bool isDark) {
+    final icon = _getActivityIcon(activity.type);
+    final color = _getActivityColor(activity.type);
+    
+    return Container(
+      margin: const EdgeInsets.only(bottom: 8),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: isDark ? Colors.white.withValues(alpha: 0.1) : Colors.grey[200]!),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 40,
+            height: 40,
+            decoration: BoxDecoration(
+              color: color.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Icon(icon, color: color, size: 20),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  activity.type.displayName,
+                  style: GoogleFonts.inter(fontWeight: FontWeight.w600, fontSize: 14),
+                ),
+                if (activity.contactName != null)
+                  Text(
+                    activity.contactName!,
+                    style: GoogleFonts.inter(fontSize: 12, color: Colors.grey[600]),
+                  ),
+                Text(
+                  DateFormat.yMMMd().format(activity.createdAt),
+                  style: GoogleFonts.inter(fontSize: 11, color: Colors.grey[500]),
+                ),
+              ],
+            ),
+          ),
+          // Reply toggle
+          Column(
+            children: [
+              IconButton(
+                icon: Icon(
+                  activity.replyReceived ? Icons.mark_email_read : Icons.mark_email_unread,
+                  color: activity.replyReceived ? Colors.green : Colors.grey,
+                  size: 22,
+                ),
+                onPressed: () {
+                  ref.read(networkingControllerProvider.notifier)
+                      .toggleReply(activity.id, !activity.replyReceived);
+                },
+                tooltip: activity.replyReceived ? "Reply received" : "No reply yet",
+              ),
+              Text(
+                activity.replyReceived ? "Replied" : "Pending",
+                style: GoogleFonts.inter(
+                  fontSize: 9,
+                  color: activity.replyReceived ? Colors.green : Colors.grey,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  IconData _getActivityIcon(NetworkingType type) {
+    switch (type) {
+      case NetworkingType.followUp:
+        return Icons.email_outlined;
+      case NetworkingType.recruiterMessage:
+        return Icons.person_search;
+      case NetworkingType.connectionRequest:
+        return Icons.person_add_outlined;
+      case NetworkingType.informationalChat:
+        return Icons.coffee_outlined;
+      case NetworkingType.referralRequest:
+        return Icons.recommend;
+      case NetworkingType.thankYou:
+        return Icons.favorite_outline;
+    }
+  }
+
+  Color _getActivityColor(NetworkingType type) {
+    switch (type) {
+      case NetworkingType.followUp:
+        return Colors.blue;
+      case NetworkingType.recruiterMessage:
+        return Colors.purple;
+      case NetworkingType.connectionRequest:
+        return Colors.orange;
+      case NetworkingType.informationalChat:
+        return Colors.brown;
+      case NetworkingType.referralRequest:
+        return Colors.teal;
+      case NetworkingType.thankYou:
+        return Colors.pink;
+    }
+  }
+
+  void _showAddActivityDialog(BuildContext context, WidgetRef ref, JobModel job) {
+    NetworkingType selectedType = NetworkingType.followUp;
+    final contactController = TextEditingController();
+    final notesController = TextEditingController();
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setModalState) => Container(
+          padding: EdgeInsets.only(
+            bottom: MediaQuery.of(context).viewInsets.bottom,
+          ),
+          decoration: BoxDecoration(
+            color: isDark ? const Color(0xFF1A1A2E) : Colors.white,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+          ),
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  "Log Networking Activity",
+                  style: GoogleFonts.outfit(fontSize: 20, fontWeight: FontWeight.bold),
+                ),
+                Text(
+                  "For: ${job.role} at ${job.company}",
+                  style: GoogleFonts.inter(fontSize: 12, color: Colors.grey),
+                ),
+                const SizedBox(height: 20),
+                
+                // Activity Type
+                Text("Activity Type", style: GoogleFonts.inter(fontWeight: FontWeight.w600)),
+                const SizedBox(height: 8),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: NetworkingType.values.map((type) {
+                    final isSelected = selectedType == type;
+                    return ChoiceChip(
+                      label: Text(type.displayName),
+                      selected: isSelected,
+                      onSelected: (selected) {
+                        if (selected) {
+                          setModalState(() => selectedType = type);
+                        }
+                      },
+                      selectedColor: Colors.indigo.withValues(alpha: 0.2),
+                      labelStyle: TextStyle(
+                        color: isSelected ? Colors.indigo : null,
+                        fontWeight: isSelected ? FontWeight.w600 : null,
+                      ),
+                    );
+                  }).toList(),
+                ),
+                const SizedBox(height: 16),
+                
+                // Contact Name
+                TextField(
+                  controller: contactController,
+                  decoration: InputDecoration(
+                    labelText: "Contact Name (optional)",
+                    hintText: "e.g., John Smith, Recruiter",
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                
+                // Notes
+                TextField(
+                  controller: notesController,
+                  maxLines: 3,
+                  decoration: InputDecoration(
+                    labelText: "Notes (optional)",
+                    hintText: "Any additional details...",
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
+                ),
+                const SizedBox(height: 24),
+                
+                // Save Button
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: () {
+                      ref.read(networkingControllerProvider.notifier).addActivity(
+                        type: selectedType,
+                        jobId: job.id,
+                        jobTitle: job.role,
+                        companyName: job.company,
+                        contactName: contactController.text.isNotEmpty ? contactController.text : null,
+                        notes: notesController.text.isNotEmpty ? notesController.text : null,
+                      );
+                      Navigator.pop(context);
+                    },
+                    style: ElevatedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    ),
+                    child: Text("Log Activity", style: GoogleFonts.inter(fontWeight: FontWeight.w600)),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
       ),
     );
   }

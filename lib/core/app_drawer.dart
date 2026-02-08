@@ -110,6 +110,18 @@ class AppDrawer extends ConsumerWidget {
                     context.go('/tracker');
                   },
                 ),
+                _buildNavItem(
+                  context,
+                  icon: Icons.task_alt_outlined,
+                  selectedIcon: Icons.task_alt,
+                  label: 'Daily Actions',
+                  isSelected: selectedIndex == 10,
+                  onTap: () {
+                    Navigator.pop(context);
+                    context.push('/daily-actions');
+                  },
+                  isNew: true,
+                ),
 
                 const SizedBox(height: 16),
                 _buildSectionTitle('LINKEDIN HUB', isDark),
@@ -185,20 +197,20 @@ class AppDrawer extends ConsumerWidget {
                   badge: '3',
                 ),
 
-                const SizedBox(height: 16),
-                _buildSectionTitle('DISCOVER', isDark),
-                _buildNavItem(
-                  context,
-                  icon: Icons.rocket_launch_outlined,
-                  selectedIcon: Icons.rocket_launch,
-                  label: 'Upcoming Features',
-                  isSelected: selectedIndex == 5,
-                  onTap: () {
-                    Navigator.pop(context);
-                    context.push('/upcoming');
-                  },
-                  isNew: true,
-                ),
+                // const SizedBox(height: 16),
+                // _buildSectionTitle('DISCOVER', isDark),
+                // _buildNavItem(
+                //   context,
+                //   icon: Icons.rocket_launch_outlined,
+                //   selectedIcon: Icons.rocket_launch,
+                //   label: 'Upcoming Features',
+                //   isSelected: selectedIndex == 5,
+                //   onTap: () {
+                //     Navigator.pop(context);
+                //     context.push('/upcoming');
+                //   },
+                //   isNew: true,
+                // ),
 
                 // Admin section - only visible to admins
                 if (showAdmin) ...[
