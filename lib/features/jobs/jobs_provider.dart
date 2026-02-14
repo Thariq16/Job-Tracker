@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'dart:typed_data';
 import 'job_model.dart';
 import 'job_repository.dart';
@@ -44,6 +45,7 @@ class JobsController extends Notifier<AsyncValue<void>> {
 
       final job = JobModel(
         id: '',
+        userId: FirebaseAuth.instance.currentUser?.uid ?? '',
         company: company,
         role: role,
         status: 'applied',
@@ -106,6 +108,7 @@ class JobsController extends Notifier<AsyncValue<void>> {
 
       final job = JobModel(
         id: jobId, 
+        userId: FirebaseAuth.instance.currentUser?.uid ?? '',
         company: company,
         role: role,
         status: status,

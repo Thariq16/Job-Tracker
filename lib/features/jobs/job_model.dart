@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 
 class JobModel {
   final String id;
+  final String userId;
   final String company;
   final String role;
   final String status; // 'applied', 'interviewing', 'offer', 'rejected'
@@ -23,6 +24,7 @@ class JobModel {
 
   JobModel({
     required this.id,
+    required this.userId,
     required this.company,
     required this.role,
     required this.status,
@@ -45,6 +47,7 @@ class JobModel {
 
   Map<String, dynamic> toMap() {
     return {
+      'userId': userId,
       'company': company,
       'role': role,
       'status': status,
@@ -70,6 +73,7 @@ class JobModel {
     final data = doc.data() as Map<String, dynamic>;
     return JobModel(
       id: doc.id,
+      userId: data['userId'] ?? '',
       company: data['company'] ?? '',
       role: data['role'] ?? '',
       status: data['status'] ?? 'applied',

@@ -26,7 +26,7 @@ class JobDetailScreen extends ConsumerWidget {
         actions: [
           jobsAsync.when(
             data: (jobs) {
-              final job = jobs.firstWhere((j) => j.id == jobId, orElse: () => JobModel(id: '', company: '', role: '', status: '', url: '', appliedDate: DateTime.now()));
+              final job = jobs.firstWhere((j) => j.id == jobId, orElse: () => JobModel(id: '', userId: '', company: '', role: '', status: '', url: '', appliedDate: DateTime.now()));
               if (job.id.isEmpty) return const SizedBox();
               return IconButton(
                 icon: const Icon(Icons.edit),
@@ -52,7 +52,7 @@ class JobDetailScreen extends ConsumerWidget {
         data: (jobs) {
           final job = jobs.firstWhere(
             (j) => j.id == jobId, 
-            orElse: () => JobModel(id: 'notFound', company: 'Not Found', role: '', status: '', url: '', appliedDate: DateTime.now())
+            orElse: () => JobModel(id: 'notFound', userId: '', company: 'Not Found', role: '', status: '', url: '', appliedDate: DateTime.now())
           );
 
           if (job.id == 'notFound') return const Center(child: Text("Job not found"));
