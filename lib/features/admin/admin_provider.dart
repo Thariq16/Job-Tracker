@@ -14,12 +14,14 @@ final userStatsProvider = FutureProvider<UserStats>((ref) async {
     repo.getTotalUsers(),
     repo.getActiveUsers(7),
     repo.getNewUsers(30),
+    repo.getInactiveUsers(7),
   ]);
 
   return UserStats(
     totalUsers: results[0],
     activeUsers7d: results[1],
     newUsers30d: results[2],
+    inactiveUsers7d: results[3],
   );
 });
 

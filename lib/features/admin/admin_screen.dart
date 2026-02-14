@@ -130,7 +130,8 @@ class AdminScreen extends ConsumerWidget {
           children: [
             _StatRow(label: 'Total Users', value: _formatNumber(stats.totalUsers), isDark: isDark),
             _StatRow(label: 'Active (7 days)', value: _formatNumber(stats.activeUsers7d), isDark: isDark),
-            _StatRow(label: 'New (30 days)', value: _formatNumber(stats.newUsers30d), isDark: isDark),
+            _StatRow(label: 'Inactive (7 days)', value: _formatNumber(stats.inactiveUsers7d), isDark: isDark),
+            _StatRow(label: 'Signups (30 days)', value: _formatNumber(stats.newUsers30d), isDark: isDark),
           ],
         ),
         loading: () => const Center(child: CircularProgressIndicator()),

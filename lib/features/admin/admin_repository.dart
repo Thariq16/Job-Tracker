@@ -29,7 +29,14 @@ class AdminRepository {
     return snapshot.count ?? 0;
   }
 
-  /// Get users created in the last N days
+  /// Get inactive users (last active more than N days ago)
+  Future<int> getInactiveUsers(int days) async {
+    final totalUsers = await getTotalUsers();
+    final activeUsers = await getActiveUsers(days);
+    return totalUsers - activeUsers;
+  }
+
+  /// Get users created in the last N days (signups)
   Future<int> getNewUsers(int days) async {
     final cutoff = DateTime.now().subtract(Duration(days: days));
     final snapshot = await _firestore
@@ -92,11 +99,13 @@ class AdminRepository {
 class UserStats {
   final int totalUsers;
   final int activeUsers7d;
+  final int inactiveUsers7d;
   final int newUsers30d;
 
   UserStats({
     required this.totalUsers,
     required this.activeUsers7d,
+    required this.inactiveUsers7d,
     required this.newUsers30d,
   });
 }
