@@ -51,9 +51,8 @@ class NpsRepository {
 
   Future<int> _getJobsCount() async {
     final snapshot = await _firestore
-        .collection('users')
-        .doc(_userId)
         .collection('jobs')
+        .where('userId', isEqualTo: _userId)
         .count()
         .get();
     return snapshot.count ?? 0;

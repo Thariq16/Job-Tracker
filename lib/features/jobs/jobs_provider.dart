@@ -3,10 +3,21 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'dart:typed_data';
 import 'job_model.dart';
 import 'job_repository.dart';
+import '../auth/auth_repository.dart';
 
 final jobsStreamProvider = StreamProvider<List<JobModel>>((ref) {
-  final repository = ref.watch(jobRepositoryProvider);
-  return repository.getJobs();
+  // Watch auth state so the stream re-creates when user changes
+  final authState = ref.watch(authStateChangesProvider);
+  
+  return authState.when(
+    data: (user) {
+      if (user == null) return Stream.value([]);
+      final repository = ref.watch(jobRepositoryProvider);
+      return repository.getJobs();
+    },
+    loading: () => Stream.value([]),
+    error: (_, __) => Stream.value([]),
+  );
 });
 
 final jobsControllerProvider = NotifierProvider<JobsController, AsyncValue<void>>(() {
