@@ -89,9 +89,9 @@ class SkeletonJobCard extends StatelessWidget {
                   const SizedBox(height: 12),
                   const Row(
                     children: [
-                      SkeletonLoader(width: 60, height: 20, borderRadius: 6),
+                      Flexible(child: SkeletonLoader(width: 60, height: 20, borderRadius: 6)),
                       SizedBox(width: 8),
-                      SkeletonLoader(width: 40, height: 20, borderRadius: 6),
+                      Flexible(child: SkeletonLoader(width: 40, height: 20, borderRadius: 6)),
                     ],
                   ),
                 ],

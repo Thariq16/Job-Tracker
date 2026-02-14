@@ -26,6 +26,7 @@ class NetworkingRepository {
 
   /// Stream all networking activities (most recent first)
   Stream<List<NetworkingActivity>> getActivitiesStream() {
+    if (_auth.currentUser?.uid == null) return Stream.value([]);
     return _collection
         .orderBy('createdAt', descending: true)
         .snapshots()
@@ -36,6 +37,7 @@ class NetworkingRepository {
 
   /// Stream activities for a specific job
   Stream<List<NetworkingActivity>> getActivitiesForJobStream(String jobId) {
+    if (_auth.currentUser?.uid == null) return Stream.value([]);
     return _collection
         .where('jobId', isEqualTo: jobId)
         .orderBy('createdAt', descending: true)

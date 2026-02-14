@@ -90,7 +90,12 @@ class _AddJobModalState extends ConsumerState<AddJobModal> {
 
   Future<void> _analyzeLink() async {
     final url = _linkController.text.trim();
-    if (url.isEmpty) return;
+    if (url.isEmpty) {
+      setState(() {
+        _error = 'Please paste a job link first';
+      });
+      return;
+    }
 
     setState(() {
       _isAnalyzing = true;
@@ -103,17 +108,16 @@ class _AddJobModalState extends ConsumerState<AddJobModal> {
       
       if (mounted) {
         setState(() {
-          // Populate fields if they are empty or we have better data
-          if (_companyController.text.isEmpty && data.company != null) {
+          if (data.company != null) {
             _companyController.text = data.company!;
           }
-          if (_roleController.text.isEmpty && data.role != null) {
+          if (data.role != null) {
             _roleController.text = data.role!;
           }
-          if (_countryController.text.isEmpty && data.country != null) {
+          if (data.country != null) {
             _countryController.text = data.country!;
           }
-          if (_descController.text.isEmpty && data.description != null) {
+          if (data.description != null) {
             _descController.text = data.description!;
           }
           
@@ -147,7 +151,7 @@ class _AddJobModalState extends ConsumerState<AddJobModal> {
     } catch (e) {
       if (mounted) {
         setState(() {
-          _error = 'Failed to analyze link: $e';
+          _error = 'Failed to parse link: $e';
         });
       }
     } finally {
@@ -159,6 +163,8 @@ class _AddJobModalState extends ConsumerState<AddJobModal> {
 
   @override
   Widget build(BuildContext context) {
+    final isEditing = widget.jobToEdit != null;
+
     return Padding(
       padding: EdgeInsets.only(
         bottom: MediaQuery.of(context).viewInsets.bottom,
@@ -171,11 +177,12 @@ class _AddJobModalState extends ConsumerState<AddJobModal> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
+            // Header
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
-                  widget.jobToEdit != null ? 'Edit Job' : 'Add New Job',
+                  isEditing ? 'Edit Job' : (_hasAnalyzed ? 'Review & Add' : 'Add New Job'),
                   style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                     fontWeight: FontWeight.bold,
                   ),
@@ -188,25 +195,59 @@ class _AddJobModalState extends ConsumerState<AddJobModal> {
             ),
             const SizedBox(height: 24),
             
-            // Link Input
-            TextField(
-              controller: _linkController,
-              decoration: InputDecoration(
-                labelText: 'Job Post Link',
-                hintText: 'https://linkedin.com/jobs/...',
-                errorText: _error,
-                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-                suffixIcon: _isAnalyzing
-                    ? Transform.scale(scale: 0.5, child: const CircularProgressIndicator())
-                    : IconButton(
-                        icon: const Icon(Icons.auto_awesome, color: Colors.indigo),
-                        onPressed: _analyzeLink,
-                        tooltip: 'Auto-fill from Link',
-                      ),
+            // ── STEP 1: Link Input ──
+            if (!_hasAnalyzed && !isEditing) ...[
+              Text(
+                'Paste the job posting URL',
+                style: GoogleFonts.inter(fontSize: 14, color: Colors.grey[600]),
               ),
-            ),
-            
-            if (_hasAnalyzed || _companyController.text.isNotEmpty) ...[
+              const SizedBox(height: 12),
+              TextField(
+                controller: _linkController,
+                decoration: InputDecoration(
+                  labelText: 'Job Post Link',
+                  hintText: 'https://linkedin.com/jobs/...',
+                  errorText: _error,
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                  prefixIcon: const Icon(Icons.link),
+                ),
+                autofocus: true,
+              ),
+              const SizedBox(height: 24),
+              SizedBox(
+                height: 50,
+                child: ElevatedButton.icon(
+                  onPressed: _isAnalyzing ? null : _analyzeLink,
+                  icon: _isAnalyzing
+                      ? const SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                        )
+                      : const Icon(Icons.auto_awesome),
+                  label: Text(_isAnalyzing ? 'Parsing...' : 'Parse the Link'),
+                ),
+              ),
+              const SizedBox(height: 24),
+            ],
+
+            // ── STEP 2: Parsed data review + Submit ──
+            if (_hasAnalyzed || isEditing) ...[
+              // Link field (editable, shown for reference)
+              TextField(
+                controller: _linkController,
+                decoration: InputDecoration(
+                  labelText: 'Job Post Link',
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                  suffixIcon: !isEditing
+                      ? IconButton(
+                          icon: const Icon(Icons.auto_awesome, color: Colors.indigo),
+                          onPressed: _isAnalyzing ? null : _analyzeLink,
+                          tooltip: 'Re-parse link',
+                        )
+                      : null,
+                ),
+              ),
               const SizedBox(height: 16),
               TextField(
                 controller: _companyController,
@@ -282,7 +323,7 @@ class _AddJobModalState extends ConsumerState<AddJobModal> {
                 data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
                 child: ExpansionTile(
                   title: const Text("Job Details"),
-                  initiallyExpanded: _hasAnalyzed,
+                  initiallyExpanded: _hasAnalyzed && !isEditing,
                   children: [
                     TextField(
                       controller: _descController,
@@ -330,14 +371,17 @@ class _AddJobModalState extends ConsumerState<AddJobModal> {
                   ],
                 ),
               ),
-            ],
 
-            const SizedBox(height: 24),
-            ElevatedButton(
-              onPressed: _submitForm,
-              child: Text(widget.jobToEdit != null ? 'Save Changes' : 'Add to Tracker'),
-            ),
-            const SizedBox(height: 24),
+              const SizedBox(height: 24),
+              SizedBox(
+                height: 50,
+                child: ElevatedButton(
+                  onPressed: _submitForm,
+                  child: Text(isEditing ? 'Save Changes' : 'Add to Tracker'),
+                ),
+              ),
+              const SizedBox(height: 24),
+            ],
           ],
         ),
       ),

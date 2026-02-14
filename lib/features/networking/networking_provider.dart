@@ -4,25 +4,50 @@
 /// Handles real-time updates, activity tracking, and stats.
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../auth/auth_repository.dart';
 import 'networking_model.dart';
 import 'networking_repository.dart';
 
 /// Stream provider for all networking activities
 final networkingActivitiesProvider = StreamProvider<List<NetworkingActivity>>((ref) {
-  final repository = ref.watch(networkingRepositoryProvider);
-  return repository.getActivitiesStream();
+  final authState = ref.watch(authStateChangesProvider);
+  return authState.when(
+    data: (user) {
+      if (user == null) return Stream.value([]);
+      final repository = ref.watch(networkingRepositoryProvider);
+      return repository.getActivitiesStream();
+    },
+    loading: () => Stream.value([]),
+    error: (_, __) => Stream.value([]),
+  );
 });
 
 /// Stream provider for activities related to a specific job
 final networkingForJobProvider = StreamProvider.family<List<NetworkingActivity>, String>((ref, jobId) {
-  final repository = ref.watch(networkingRepositoryProvider);
-  return repository.getActivitiesForJobStream(jobId);
+  final authState = ref.watch(authStateChangesProvider);
+  return authState.when(
+    data: (user) {
+      if (user == null) return Stream.value([]);
+      final repository = ref.watch(networkingRepositoryProvider);
+      return repository.getActivitiesForJobStream(jobId);
+    },
+    loading: () => Stream.value([]),
+    error: (_, __) => Stream.value([]),
+  );
 });
 
 /// Stream provider for networking stats
 final networkingStatsProvider = StreamProvider<NetworkingStats>((ref) {
-  final repository = ref.watch(networkingRepositoryProvider);
-  return repository.getStatsStream();
+  final authState = ref.watch(authStateChangesProvider);
+  return authState.when(
+    data: (user) {
+      if (user == null) return Stream.value(const NetworkingStats());
+      final repository = ref.watch(networkingRepositoryProvider);
+      return repository.getStatsStream();
+    },
+    loading: () => Stream.value(const NetworkingStats()),
+    error: (_, __) => Stream.value(const NetworkingStats()),
+  );
 });
 
 /// Controller for networking activities

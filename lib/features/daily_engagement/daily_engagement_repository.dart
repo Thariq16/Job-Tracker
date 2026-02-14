@@ -35,7 +35,7 @@ class DailyEngagementRepository {
 
     return _todayDoc.snapshots().map((snapshot) {
       if (!snapshot.exists) {
-        return DailyEngagement.empty(_userId!);
+        return DailyEngagement.empty(_userId ?? '');
       }
       return DailyEngagement.fromSnapshot(snapshot);
     });
@@ -47,7 +47,7 @@ class DailyEngagementRepository {
 
     final doc = await _todayDoc.get();
     if (!doc.exists) {
-      return DailyEngagement.empty(_userId!);
+      return DailyEngagement.empty(_userId ?? '');
     }
     return DailyEngagement.fromSnapshot(doc);
   }

@@ -30,7 +30,7 @@ class LinkedInSetupRepository {
     
     return _progressDoc.snapshots().map((snapshot) {
       if (!snapshot.exists) {
-        return LinkedInSetupProgress.empty(_userId!);
+        return LinkedInSetupProgress.empty(_userId ?? '');
       }
       return LinkedInSetupProgress.fromSnapshot(snapshot);
     });
@@ -42,7 +42,7 @@ class LinkedInSetupRepository {
     
     final snapshot = await _progressDoc.get();
     if (!snapshot.exists) {
-      return LinkedInSetupProgress.empty(_userId!);
+      return LinkedInSetupProgress.empty(_userId ?? '');
     }
     return LinkedInSetupProgress.fromSnapshot(snapshot);
   }

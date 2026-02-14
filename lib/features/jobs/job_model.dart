@@ -89,7 +89,7 @@ class JobModel {
       benefits: data['benefits'] != null ? List<String>.from(data['benefits']) : null,
       country: data['country'],
       workMode: data['workMode'],
-      appliedDate: (data['appliedDate'] as Timestamp).toDate(),
+      appliedDate: data['appliedDate'] != null ? (data['appliedDate'] as Timestamp).toDate() : DateTime.now(),
       updatedAt: data['updatedAt'] != null ? (data['updatedAt'] as Timestamp).toDate() : null,
       followUpDate: data['followUpDate'] != null ? (data['followUpDate'] as Timestamp).toDate() : null,
     );

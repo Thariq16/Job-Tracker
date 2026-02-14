@@ -42,14 +42,14 @@ class AdminRepository {
 
   /// Get total job count across all users
   Future<int> getTotalJobs() async {
-    final snapshot = await _firestore.collectionGroup('jobs').count().get();
+    final snapshot = await _firestore.collection('jobs').count().get();
     return snapshot.count ?? 0;
   }
 
   /// Get all jobs for analysis (unique companies, etc.)
   Future<List<Map<String, dynamic>>> getAllJobs() async {
-    final snapshot = await _firestore.collectionGroup('jobs').get();
-    return snapshot.docs.map((doc) => doc.data()).toList();
+    final snapshot = await _firestore.collection('jobs').get();
+    return snapshot.docs.map((doc) => doc.data() as Map<String, dynamic>).toList();
   }
 
   /// Get unique company names and their counts
